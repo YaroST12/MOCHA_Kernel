@@ -1157,7 +1157,6 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 	struct kioctx *ctx;
 	long ret = 0;
 	int i = 0;
-	struct blk_plug plug;
 
 #ifndef CONFIG_AIO_SSD_ONLY
 	struct blk_plug plug;
@@ -1183,7 +1182,6 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 #ifndef CONFIG_AIO_SSD_ONLY
 	blk_start_plug(&plug);
 #endif
-
 	/*
 	 * AKPM: should this return a partial result if some of the IOs were
 	 * successfully submitted?
@@ -1206,7 +1204,6 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 		if (ret)
 			break;
 	}
-	blk_finish_plug(&plug);
 
 	put_ioctx(ctx);
 	return i ? i : ret;
