@@ -2785,7 +2785,11 @@ static int synaptics_rmi4_probe(struct platform_device *pdev)
 	rmi4_data->input_dev->enabled = true;
 #endif
 
-	rmi4_data->input_dev->event = synaptics_rmi4_event;
+	if (!exp_data.initialized) {
+		mutex_init(&exp_data.mutex);
+		INIT_LIST_HEAD(&exp_data.list);
+		exp_data.initialized = true;
+	}
 
 	rmi4_data->irq = gpio_to_irq(bdata->irq_gpio);
 
@@ -2798,22 +2802,6 @@ static int synaptics_rmi4_probe(struct platform_device *pdev)
 				__func__);
 		goto err_enable_irq;
 	}
-
-	if (!exp_data.initialized) {
-		mutex_init(&exp_data.mutex);
-		INIT_LIST_HEAD(&exp_data.list);
-		exp_data.initialized = true;
-	}
-
-    synaptics_rmi4_proc_init();
-
-	exp_data.workqueue = create_singlethread_workqueue("dsx_exp_workqueue");
-	INIT_DELAYED_WORK(&exp_data.work, synaptics_rmi4_exp_fn_work);
-	exp_data.rmi4_data = rmi4_data;
-	exp_data.queue_work = true;
-	queue_delayed_work(exp_data.workqueue,
-			&exp_data.work,
-			msecs_to_jiffies(EXP_FN_WORK_DELAY_MS));
 
 	for (attr_count = 0; attr_count < ARRAY_SIZE(attrs); attr_count++) {
 		retval = sysfs_create_file(&rmi4_data->input_dev->dev.kobj,
