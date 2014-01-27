@@ -185,6 +185,10 @@ choice
 	config DEFAULT_SIOPLUS
 		bool "SIOPLUS"
 
+	config DEFAULT_BFQ
+		bool "BFQ"
+		help
+
 	config DEFAULT_NOOP
 		bool "No-op"
 
