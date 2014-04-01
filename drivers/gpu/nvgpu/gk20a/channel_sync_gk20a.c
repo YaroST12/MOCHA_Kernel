@@ -266,6 +266,7 @@ int gk20a_channel_syncpt_incr(struct gk20a_channel_sync *s,
 int gk20a_channel_syncpt_incr_user_syncpt(struct gk20a_channel_sync *s,
 					  struct priv_cmd_entry **entry,
 					  struct gk20a_channel_fence *fence,
+					  bool wfi,
 					  u32 *id, u32 *thresh)
 {
 	struct gk20a_channel_syncpt *sp =
@@ -273,8 +274,10 @@ int gk20a_channel_syncpt_incr_user_syncpt(struct gk20a_channel_sync *s,
 	/* Need to do 'host incr + wfi' or 'gfx incr' since we return the fence
 	 * to user space. */
 	int err = __gk20a_channel_syncpt_incr(s,
-			sp->c->obj_class == KEPLER_C /* use gfx class? */,
-			sp->c->obj_class != KEPLER_C /* wfi if host class */,
+			wfi &&
+			  sp->c->obj_class == KEPLER_C /* use gfx class? */,
+			wfi &&
+			  sp->c->obj_class != KEPLER_C /* wfi if host class */,
 			true /* register irq */,
 			entry, fence);
 	if (err)
@@ -287,6 +290,7 @@ int gk20a_channel_syncpt_incr_user_syncpt(struct gk20a_channel_sync *s,
 int gk20a_channel_syncpt_incr_user_fd(struct gk20a_channel_sync *s,
 				      struct priv_cmd_entry **entry,
 				      struct gk20a_channel_fence *fence,
+				      bool wfi,
 				      int *fd)
 {
 #ifdef CONFIG_SYNC
@@ -294,7 +298,7 @@ int gk20a_channel_syncpt_incr_user_fd(struct gk20a_channel_sync *s,
 	struct nvhost_ctrl_sync_fence_info pt;
 	struct gk20a_channel_syncpt *sp =
 		container_of(s, struct gk20a_channel_syncpt, ops);
-	err = gk20a_channel_syncpt_incr_user_syncpt(s, entry, fence,
+	err = gk20a_channel_syncpt_incr_user_syncpt(s, entry, fence, wfi,
 						    &pt.id, &pt.thresh);
 	if (err)
 		return err;
