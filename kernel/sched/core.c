@@ -2048,6 +2048,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 * frame will be invalid.
 	 */
 	finish_task_switch(this_rq(), prev);
+	trace_sched_switch_end(0);
 }
 
 /*
