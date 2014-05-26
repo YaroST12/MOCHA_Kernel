@@ -1555,56 +1555,20 @@ static int acm_resume(struct usb_interface *intf)
 {
 	struct acm *acm = usb_get_intfdata(intf);
 	int rv = 0;
-	int cnt;
-#ifdef CONFIG_PM
-	struct urb *res;
-#else
-	struct acm_wb *wb;
-#endif
-
-	if (!acm) {
-		pr_err("%s: !acm\n", __func__);
-		return -ENODEV;
-	}
 
 	spin_lock_irq(&acm->read_lock);
-	if (acm->susp_count > 0) {
-		acm->susp_count -= 1;
-		cnt = acm->susp_count;
-	} else {
-		spin_unlock_irq(&acm->read_lock);
-		return 0;
-	}
-	spin_unlock_irq(&acm->read_lock);
+	spin_lock(&acm->write_lock);
 
-	if (cnt)
-		return 0;
+	if (--acm->susp_count)
+		goto out;
 
 	if (test_bit(ASYNCB_INITIALIZED, &acm->port.flags)) {
-		rv = usb_submit_urb(acm->ctrlurb, GFP_NOIO);
-		spin_lock_irq(&acm->write_lock);
-#ifdef CONFIG_PM
-		while ((res = usb_get_from_anchor(&acm->deferred))) {
-			/* decrement ref count*/
-			usb_put_urb(res);
-			rv = usb_submit_urb(res, GFP_ATOMIC);
-			if (rv < 0) {
-				dev_dbg(&acm->data->dev,
-					"usb_submit_urb(pending request) failed: %d",
-					rv);
-				usb_unanchor_urb(res);
-				acm_write_done(acm, res->context);
-			}
-		}
-		spin_unlock_irq(&acm->write_lock);
-#else
+		rv = usb_submit_urb(acm->ctrlurb, GFP_ATOMIC);
+
 		if (acm->delayed_wb) {
 			wb = acm->delayed_wb;
 			acm->delayed_wb = NULL;
-			spin_unlock_irq(&acm->write_lock);
 			acm_start_wb(acm, wb);
-		} else {
-			spin_unlock_irq(&acm->write_lock);
 		}
 #endif
 
@@ -1613,12 +1577,14 @@ static int acm_resume(struct usb_interface *intf)
 		 * do the write path at all cost
 		 */
 		if (rv < 0)
-			goto err_out;
+			goto out;
 
-		rv = acm_submit_read_urbs(acm, GFP_NOIO);
+		rv = acm_submit_read_urbs(acm, GFP_ATOMIC);
 	}
+out:
+	spin_unlock(&acm->write_lock);
+	spin_unlock_irq(&acm->read_lock);
 
-err_out:
 	return rv;
 }
 
