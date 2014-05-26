@@ -235,21 +235,9 @@ static int acm_write_start(struct acm *acm, int wbn)
 							acm->susp_count);
 	usb_autopm_get_interface_async(acm->control);
 	if (acm->susp_count) {
-#ifdef CONFIG_PM
-		acm->transmitting++;
-		wb->urb->transfer_buffer = wb->buf;
-		wb->urb->transfer_dma = wb->dmah;
-		wb->urb->transfer_buffer_length = wb->len;
-		wb->urb->dev = acm->dev;
-		usb_anchor_urb(wb->urb, &acm->deferred);
-#else
-		if (!acm->delayed_wb)
-			acm->delayed_wb = wb;
-		else
-			usb_autopm_put_interface_async(acm->control);
-#endif
+		usb_anchor_urb(wb->urb, &acm->delayed);
 		spin_unlock_irqrestore(&acm->write_lock, flags);
-		return 0;	/* A white lie */
+		return 0;
 	}
 	usb_mark_last_busy(acm->dev);
 #ifdef CONFIG_PM
@@ -648,6 +636,8 @@ static void acm_port_destruct(struct tty_port *port)
 static void acm_port_shutdown(struct tty_port *port)
 {
 	struct acm *acm = container_of(port, struct acm, port);
+	struct urb *urb;
+	struct acm_wb *wb;
 	int i;
 	int pm_err;
 
@@ -657,6 +647,16 @@ static void acm_port_shutdown(struct tty_port *port)
 	if (!acm->disconnected) {
 		pm_err = usb_autopm_get_interface(acm->control);
 		acm_set_control(acm, acm->ctrlout = 0);
+
+		for (;;) {
+			urb = usb_get_from_anchor(&acm->delayed);
+			if (!urb)
+				break;
+			wb = urb->context;
+			wb->use = 0;
+			usb_autopm_put_interface_async(acm->control);
+		}
+
 		usb_kill_urb(acm->ctrlurb);
 		for (i = 0; i < ACM_NW; i++)
 			usb_kill_urb(acm->wb[i].urb);
@@ -1276,6 +1276,7 @@ made_compressed_probe:
 		acm->no_hangup_in_reset_resume = 1;
 	tty_port_init(&acm->port);
 	acm->port.ops = &acm_port_ops;
+	init_usb_anchor(&acm->delayed);
 
 	buf = usb_alloc_coherent(usb_dev, ctrlsize, GFP_KERNEL, &acm->ctrl_dma);
 	if (!buf) {
@@ -1554,6 +1555,7 @@ static int acm_suspend(struct usb_interface *intf, pm_message_t message)
 static int acm_resume(struct usb_interface *intf)
 {
 	struct acm *acm = usb_get_intfdata(intf);
+	struct urb *urb;
 	int rv = 0;
 
 	spin_lock_irq(&acm->read_lock);
@@ -1565,10 +1567,12 @@ static int acm_resume(struct usb_interface *intf)
 	if (test_bit(ASYNCB_INITIALIZED, &acm->port.flags)) {
 		rv = usb_submit_urb(acm->ctrlurb, GFP_ATOMIC);
 
-		if (acm->delayed_wb) {
-			wb = acm->delayed_wb;
-			acm->delayed_wb = NULL;
-			acm_start_wb(acm, wb);
+		for (;;) {
+			urb = usb_get_from_anchor(&acm->delayed);
+			if (!urb)
+				break;
+
+			acm_start_wb(acm, urb->context);
 		}
 #endif
 
