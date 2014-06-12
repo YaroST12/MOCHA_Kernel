@@ -1870,10 +1870,20 @@ int gk20a_channel_suspend(struct gk20a *g)
 
 	gk20a_dbg_fn("");
 
-	/* wait for engine idle */
-	err = gk20a_fifo_wait_engine_idle(g);
-	if (err)
-		return err;
+	/* idle the engine by submitting WFI on non-KEPLER_C channel */
+	for (chid = 0; chid < f->num_channels; chid++) {
+		struct channel_gk20a *c = &f->channel[chid];
+		if (c->in_use && c->obj_class != KEPLER_C && !c->has_timedout) {
+			err = gk20a_channel_submit_wfi(c);
+			if (err) {
+				return err;
+			}
+
+			c->sync->wait_cpu(c->sync, &c->last_submit_fence,
+					  500000);
+			break;
+		}
+	}
 
 	for (chid = 0; chid < f->num_channels; chid++) {
 		if (f->channel[chid].in_use) {
