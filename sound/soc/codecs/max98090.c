@@ -3806,7 +3806,9 @@ static int max98090_probe(struct snd_soc_codec *codec)
 		M98090_JDETEN_MASK | M98090_JDEB_25MS);
 
 	/* Register for interrupts */
-	if ((request_threaded_irq(pdata->irq, NULL,
+	dev_dbg(codec->dev, "irq = %d\n", max98090->irq);
+
+	ret = devm_request_threaded_irq(codec->dev, max98090->irq, NULL,
 		max98090_interrupt, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 		"max98090_interrupt", codec)) < 0) {
 		dev_info(codec->dev, "request_irq failed\n");
