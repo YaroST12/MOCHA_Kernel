@@ -1346,6 +1346,9 @@ int gk20a_secure_page_alloc(struct platform_device *pdev)
 			platform->secure_alloc_ready = true;
 	}
 
+	if (!err)
+		platform->secure_alloc_ready = true;
+
 	return err;
 }
 
