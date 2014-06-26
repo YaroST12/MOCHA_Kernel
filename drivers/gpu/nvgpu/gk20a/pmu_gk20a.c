@@ -2050,10 +2050,7 @@ static int pmu_init_powergating(struct pmu_gk20a *pmu)
 	gk20a_pmu_cmd_post(g, &cmd, NULL, NULL, PMU_COMMAND_QUEUE_HPQ,
 			pmu_handle_pg_elpg_msg, pmu, &seq, ~0);
 
-	/* start with elpg disabled until first enable call */
-	pmu->elpg_refcnt = 0;
-
-	pmu->pmu_state = PMU_STATE_ELPG_BOOTING;
+	pmu->pmu_state = PMU_STATE_STARTING;
 
 	return 0;
 }
