@@ -1633,6 +1633,9 @@ int __gk20a_do_idle(struct platform_device *pdev, bool force_reset)
 	int ref_cnt;
 	bool is_railgated;
 
+	if (!platform->can_railgate)
+		return -ENOSYS;
+
 	/* acquire busy lock to block other busy() calls */
 	down_write(&g->busy_lock);
 
@@ -1672,34 +1675,21 @@ int __gk20a_do_idle(struct platform_device *pdev, bool force_reset)
 	 */
 	pm_runtime_put_sync(&pdev->dev);
 
-	if (platform->can_railgate && !force_reset) {
-		/* add sufficient delay to allow GPU to rail gate */
-		msleep(platform->railgate_delay);
+	/* add sufficient delay to allow GPU to rail gate */
+	msleep(platform->railgate_delay);
 
-		timeout = jiffies + msecs_to_jiffies(GK20A_WAIT_FOR_IDLE_MS);
+	timeout = jiffies + msecs_to_jiffies(GK20A_WAIT_FOR_IDLE_MS);
 
-		/* check in loop if GPU is railgated or not */
-		do {
-			msleep(1);
-			is_railgated = platform->is_railgated(pdev);
-		} while (!is_railgated && time_before(jiffies, timeout));
+	/* check in loop if GPU is railgated or not */
+	do {
+		msleep(1);
+		is_railgated = platform->is_railgated(pdev);
+	} while (!is_railgated && time_before(jiffies, timeout));
 
-		if (is_railgated) {
-			return 0;
-		} else {
-			gk20a_err(&pdev->dev, "failed to idle in timeout\n");
-			goto fail_timeout;
-		}
-	} else {
-		pm_runtime_get_sync(&pdev->dev);
-		gk20a_pm_prepare_poweroff(&pdev->dev);
-
-		tegra_periph_reset_assert(platform->clk[0]);
-		udelay(10);
-
-		g->forced_reset = true;
+	if (is_railgated)
 		return 0;
-	}
+	else
+		goto fail_timeout;
 
 fail:
 	pm_runtime_put_noidle(&pdev->dev);
