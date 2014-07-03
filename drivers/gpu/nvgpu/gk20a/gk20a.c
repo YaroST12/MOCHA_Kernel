@@ -1646,9 +1646,6 @@ int __gk20a_do_idle(struct platform_device *pdev, bool force_reset)
 	if (platform->is_railgated(pdev))
 		return 0;
 
-	/* check if global force_reset flag is set */
-	force_reset |= platform->force_reset_in_do_idle;
-
 	/* prevent suspend by incrementing usage counter */
 	pm_runtime_get_noresume(&pdev->dev);
 
@@ -1680,16 +1677,8 @@ int __gk20a_do_idle(struct platform_device *pdev, bool force_reset)
 
 	timeout = jiffies + msecs_to_jiffies(GK20A_WAIT_FOR_IDLE_MS);
 
-	/* check in loop if GPU is railgated or not */
-	do {
-		msleep(1);
-		is_railgated = platform->is_railgated(pdev);
-	} while (!is_railgated && time_before(jiffies, timeout));
-
-	if (is_railgated)
-		return 0;
-	else
-		goto fail_timeout;
+	/* GPU is not rail gated by now, return error */
+	goto fail_timeout;
 
 fail:
 	pm_runtime_put_noidle(&pdev->dev);
@@ -1725,15 +1714,6 @@ int __gk20a_do_unidle(struct platform_device *pdev)
 {
 	struct gk20a *g = get_gk20a(pdev);
 	struct gk20a_platform *platform = dev_get_drvdata(&pdev->dev);
-
-	if (g->forced_reset) {
-		tegra_periph_reset_deassert(platform->clk[0]);
-
-		gk20a_pm_finalize_poweron(&pdev->dev);
-		pm_runtime_put_sync(&pdev->dev);
-
-		g->forced_reset = false;
-	}
 
 	/* release the lock and open up all other busy() calls */
 	mutex_unlock(&platform->railgate_lock);
