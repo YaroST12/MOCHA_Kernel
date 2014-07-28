@@ -1470,7 +1470,7 @@ int gk20a_fifo_preempt_channel(struct gk20a *g, u32 hw_chid)
 	u32 delay = GR_IDLE_CHECK_DEFAULT;
 	u32 ret = 0;
 	u32 token = PMU_INVALID_MUTEX_OWNER_ID;
-	u32 elpg_off = 0;
+	u32 mutex_ret = 0;
 	u32 i;
 
 	gk20a_dbg_fn("%d", hw_chid);
@@ -1479,10 +1479,7 @@ int gk20a_fifo_preempt_channel(struct gk20a *g, u32 hw_chid)
 	for (i = 0; i < g->fifo.max_runlists; i++)
 		mutex_lock(&f->runlist_info[i].mutex);
 
-	/* disable elpg if failed to acquire pmu mutex */
-	elpg_off = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
-	if (elpg_off)
-		gk20a_pmu_disable_elpg(g);
+	mutex_ret = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	/* issue preempt */
 	gk20a_writel(g, fifo_preempt_r(),
@@ -1534,10 +1531,7 @@ int gk20a_fifo_preempt_channel(struct gk20a *g, u32 hw_chid)
 		gk20a_fifo_recover(g, engines, true);
 	}
 
-	/* re-enable elpg or release pmu mutex */
-	if (elpg_off)
-		gk20a_pmu_enable_elpg(g);
-	else
+	if (!mutex_ret)
 		pmu_mutex_release(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	for (i = 0; i < g->fifo.max_runlists; i++)
@@ -1550,24 +1544,18 @@ int gk20a_fifo_enable_engine_activity(struct gk20a *g,
 				struct fifo_engine_info_gk20a *eng_info)
 {
 	u32 token = PMU_INVALID_MUTEX_OWNER_ID;
-	u32 elpg_off;
+	u32 mutex_ret;
 	u32 enable;
 
 	gk20a_dbg_fn("");
 
-	/* disable elpg if failed to acquire pmu mutex */
-	elpg_off = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
-	if (elpg_off)
-		gk20a_pmu_disable_elpg(g);
+	mutex_ret = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	enable = gk20a_readl(g, fifo_sched_disable_r());
 	enable &= ~(fifo_sched_disable_true_v() >> eng_info->runlist_id);
 	gk20a_writel(g, fifo_sched_disable_r(), enable);
 
-	/* re-enable elpg or release pmu mutex */
-	if (elpg_off)
-		gk20a_pmu_enable_elpg(g);
-	else
+	if (!mutex_ret)
 		pmu_mutex_release(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	gk20a_dbg_fn("done");
@@ -1581,7 +1569,7 @@ int gk20a_fifo_disable_engine_activity(struct gk20a *g,
 	u32 gr_stat, pbdma_stat, chan_stat, eng_stat, ctx_stat;
 	u32 pbdma_chid = ~0, engine_chid = ~0, disable;
 	u32 token = PMU_INVALID_MUTEX_OWNER_ID;
-	u32 elpg_off;
+	u32 mutex_ret;
 	u32 err = 0;
 
 	gk20a_dbg_fn("");
@@ -1592,10 +1580,7 @@ int gk20a_fifo_disable_engine_activity(struct gk20a *g,
 	    fifo_engine_status_engine_busy_v() && !wait_for_idle)
 		return -EBUSY;
 
-	/* disable elpg if failed to acquire pmu mutex */
-	elpg_off = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
-	if (elpg_off)
-		gk20a_pmu_disable_elpg(g);
+	mutex_ret = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	disable = gk20a_readl(g, fifo_sched_disable_r());
 	disable = set_field(disable,
@@ -1637,10 +1622,7 @@ int gk20a_fifo_disable_engine_activity(struct gk20a *g,
 	}
 
 clean_up:
-	/* re-enable elpg or release pmu mutex */
-	if (elpg_off)
-		gk20a_pmu_enable_elpg(g);
-	else
+	if (!mutex_ret)
 		pmu_mutex_release(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	if (err) {
@@ -1803,25 +1785,19 @@ int gk20a_fifo_update_runlist(struct gk20a *g, u32 runlist_id, u32 hw_chid,
 	struct fifo_runlist_info_gk20a *runlist = NULL;
 	struct fifo_gk20a *f = &g->fifo;
 	u32 token = PMU_INVALID_MUTEX_OWNER_ID;
-	u32 elpg_off;
+	u32 mutex_ret;
 	u32 ret = 0;
 
 	runlist = &f->runlist_info[runlist_id];
 
 	mutex_lock(&runlist->mutex);
 
-	/* disable elpg if failed to acquire pmu mutex */
-	elpg_off = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
-	if (elpg_off)
-		gk20a_pmu_disable_elpg(g);
+	mutex_ret = pmu_mutex_acquire(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	ret = gk20a_fifo_update_runlist_locked(g, runlist_id, hw_chid, add,
 					       wait_for_finish);
 
-	/* re-enable elpg or release pmu mutex */
-	if (elpg_off)
-		gk20a_pmu_enable_elpg(g);
-	else
+	if (!mutex_ret)
 		pmu_mutex_release(&g->pmu, PMU_MUTEX_ID_FIFO, &token);
 
 	mutex_unlock(&runlist->mutex);
