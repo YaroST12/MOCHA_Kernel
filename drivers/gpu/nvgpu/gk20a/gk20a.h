@@ -224,6 +224,9 @@ struct gk20a {
 
 	bool power_on;
 	bool irq_requested;
+#ifdef CONFIG_INPUT_CFBOOST
+	bool boost_added;
+#endif
 
 	struct rw_semaphore busy_lock;
 

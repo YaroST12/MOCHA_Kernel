@@ -387,14 +387,8 @@ int nvhost_as_ioctl_map_buffer_ex(struct nvhost_as_share *as_share,
 
 	nvhost_dbg_fn("");
 
-	/* ensure that padding is not set. this is required for ensuring that
-	 * we can safely use these fields later */
-	for (i = 0; i < ARRAY_SIZE(args->padding); i++)
-		if (args->padding[i])
-			return -EINVAL;
-
 	return pdata->as_ops->map_buffer(as_share, 0, args->dmabuf_fd,
-					 &args->offset, args->flags,
+					 args->as_offset, args->flags,
 					 args->kind);
 }
 
