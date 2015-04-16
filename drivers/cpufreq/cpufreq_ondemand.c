@@ -20,7 +20,7 @@
 
 /* On-demand governor macros */
 #define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(10)
-#define DEF_FREQUENCY_UP_THRESHOLD		(80)
+#define DEF_FREQUENCY_UP_THRESHOLD		(63)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_DOWN_DIFFERENTIAL	(3)
@@ -150,7 +150,7 @@ static void dbs_freq_increase(struct cpufreq_policy *p, unsigned int freq)
 }
 
 /*
- * Every sampling_rate, we check, if current idle time is less than 20%
+ * Every sampling_rate, we check, if current idle time is less than 37%
  * (default), then we try to increase frequency. Every sampling_rate, we look
  * for the lowest frequency which can sustain the load while keeping idle time
  * over 30%. If such a frequency exist, we try to decrease to this frequency.
