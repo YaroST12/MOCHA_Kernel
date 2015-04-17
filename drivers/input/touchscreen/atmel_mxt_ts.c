@@ -4739,7 +4739,7 @@ retry:
 	}
 
 	data->interrupt_ready = true;
-	data->enable_keys = true;
+	data->disable_keys = true;
 
 	device_init_wakeup(&client->dev, 1);
 
