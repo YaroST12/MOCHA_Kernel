@@ -61,6 +61,11 @@ struct rq {
 	u64 clock_task;
 	bool dither;
 
+	/* time-based average load */
+	/* in other words, stupid nvidia stuff */
+	u64 nr_last_stamp;
+	u64 nr_running_integral;
+	seqcount_t ave_seqcnt;
 #ifdef CONFIG_SCHEDSTATS
 
 	/* latency stats */
@@ -70,6 +75,7 @@ struct rq {
 
 	/* sys_sched_yield() stats */
 	unsigned int yld_count;
+	unsigned int yield_sleep_count;
 
 	/* schedule() stats */
 	unsigned int sched_switch;
@@ -125,6 +131,17 @@ static inline u64 rq_clock_task(struct rq *rq)
  */
 #define for_each_domain(cpu, __sd) \
 	for (__sd = rcu_dereference_check_sched_domain(cpu_rq(cpu)->sd); __sd; __sd = __sd->parent)
+
+/* Stupid nvidia stuff goes here */
+extern __read_mostly unsigned int sysctl_sched_yield_sleep_duration;
+extern __read_mostly int sysctl_sched_yield_sleep_threshold;
+
+/* 27 ~= 134217728ns = 134.2ms
+ * 26 ~=  67108864ns =  67.1ms
+ * 25 ~=  33554432ns =  33.5ms
+ * 24 ~=  16777216ns =  16.8ms
+ */
+#define NR_AVE_SCALE(x)		((x) << FSHIFT)
 
 #endif
 

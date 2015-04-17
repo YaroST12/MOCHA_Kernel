@@ -75,6 +75,7 @@
 #include <asm/tlb.h>
 #include <asm/unistd.h>
 #include <asm/mutex.h>
+#include <asm/relaxed.h>
 #ifdef CONFIG_PARAVIRT
 #include <asm/paravirt.h>
 #endif
@@ -162,6 +163,19 @@ int sched_iso_cpu __read_mostly = 70;
  * The relative length of deadline for each priority(nice) level.
  */
 static int prio_ratios[PRIO_RANGE] __read_mostly;
+
+/*
+ * Number of sched_yield calls that result in a thread yielding
+ * to itself before a sleep is injected in its next sched_yield call
+ * Setting this to -1 will disable adding sleep in sched_yield
+ */
+__read_mostly int sysctl_sched_yield_sleep_threshold = 4;
+
+/*
+ * Sleep duration in us used when sched_yield_sleep_threshold
+ * is exceeded.
+ */
+__read_mostly unsigned int sysctl_sched_yield_sleep_duration = 50;
 
 /*
  * The quota handed out to tasks of all priority levels when refilling their
@@ -917,6 +931,33 @@ static int effective_prio(struct task_struct *p)
 	return p->prio;
 }
 
+/* Stupid nvidia stuff */
+static inline u64 do_nr_running_integral(struct rq *rq)
+{
+	s64 nr, deltax;
+	u64 nr_running_integral = rq->nr_running_integral;
+
+	deltax = rq->clock_task - rq->nr_last_stamp;
+	nr = NR_AVE_SCALE(grq.nr_running);
+
+	nr_running_integral += nr * deltax;
+
+	return nr_running_integral;
+}
+
+int idle_cpu_relaxed(int cpu)
+{
+	struct rq *rq = cpu_rq(cpu);
+
+	if (cpu_relaxed_read_long(&rq->curr) != rq->idle)
+		return 0;
+
+	if (cpu_relaxed_read_long(grq.nr_running))
+		return 0;
+
+	return 1;
+}
+
 /*
  * activate_task - move a task to the runqueue. Enter with grq locked.
  */
@@ -939,6 +980,10 @@ static void activate_task(struct task_struct *p, struct rq *rq)
 	if (task_contributes_to_load(p))
 		grq.nr_uninterruptible--;
 	enqueue_task(p);
+	write_seqcount_begin(&rq->ave_seqcnt);
+	rq->nr_running_integral = do_nr_running_integral(rq);
+	rq->nr_last_stamp = rq->clock_task;
+	write_seqcount_end(&rq->ave_seqcnt);
 	grq.nr_running++;
 	inc_qnr();
 }
@@ -951,8 +996,13 @@ static inline void clear_sticky(struct task_struct *p);
  */
 static inline void deactivate_task(struct task_struct *p)
 {
+	struct rq *rq = task_rq(p);
 	if (task_contributes_to_load(p))
 		grq.nr_uninterruptible++;
+	write_seqcount_begin(&rq->ave_seqcnt);
+	rq->nr_running_integral = do_nr_running_integral(rq);
+	rq->nr_last_stamp = rq->clock_task;
+	write_seqcount_end(&rq->ave_seqcnt);
 	grq.nr_running--;
 	clear_sticky(p);
 }
@@ -1967,6 +2017,34 @@ unsigned long nr_iowait_cpu(int cpu)
 	return atomic_read(&this->nr_iowait);
 }
 
+u64 nr_running_integral(unsigned int cpu)
+{
+	unsigned int seqcnt;
+	u64 integral;
+	struct rq *q;
+
+	if (cpu >= nr_cpu_ids)
+		return 0;
+
+	q = cpu_rq(cpu);
+
+	/*
+	 * Update average to avoid reading stalled value if there were
+	 * no run-queue changes for a long time. On the other hand if
+	 * the changes are happening right now, just read current value
+	 * directly.
+	 */
+
+	seqcnt = read_seqcount_begin(&q->ave_seqcnt);
+	integral = do_nr_running_integral(q);
+	if (read_seqcount_retry(&q->ave_seqcnt, seqcnt)) {
+		read_seqcount_begin(&q->ave_seqcnt);
+		integral = q->nr_running_integral;
+	}
+
+	return integral;
+}
+
 unsigned long nr_active(void)
 {
 	return nr_running() + nr_uninterruptible();
@@ -1984,6 +2062,12 @@ void get_iowait_load(unsigned long *nr_waiters, unsigned long *load)
 
 	*nr_waiters = atomic_read(&this->nr_iowait);
 	*load = cpu_load(this);
+}
+
+unsigned long this_cpu_load(void)
+{
+	struct rq *this = this_rq();
+	return cpu_load(this);
 }
 
 /* Variables and functions for calc_load */
@@ -3351,6 +3435,7 @@ need_resched:
 		prev->on_cpu = false;
 		next->on_cpu = true;
 		rq->curr = next;
+		prev->yield_count = 0;
 		++*switch_count;
 
 		context_switch(rq, prev, next); /* unlocks the grq */
@@ -3363,8 +3448,10 @@ need_resched:
 		cpu = smp_processor_id();
 		rq = cpu_rq(cpu);
 		idle = rq->idle;
-	} else
+	} else {
+		prev->yield_count++;
 		grq_unlock_irq();
+	}
 
 rerun_prev_unlocked:
 	sched_preempt_enable_no_resched();
@@ -4728,10 +4815,14 @@ SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid, unsigned int, len,
 SYSCALL_DEFINE0(sched_yield)
 {
 	struct task_struct *p;
+	struct rq *rq;
 
 	p = current;
+	rq = task_rq(p);
 	grq_lock_irq();
-	schedstat_inc(task_rq(p), yld_count);
+	schedstat_inc(rq, yld_count);
+	if (rq->curr->yield_count == sysctl_sched_yield_sleep_threshold)
+		schedstat_inc(rq, yield_sleep_count);
 	requeue_task(p);
 
 	/*
@@ -4743,7 +4834,11 @@ SYSCALL_DEFINE0(sched_yield)
 	do_raw_spin_unlock(&grq.lock);
 	sched_preempt_enable_no_resched();
 
-	schedule();
+	if (rq->curr->yield_count == sysctl_sched_yield_sleep_threshold)
+		usleep_range(sysctl_sched_yield_sleep_duration,
+				sysctl_sched_yield_sleep_duration + 5);
+	else
+		schedule();
 
 	return 0;
 }

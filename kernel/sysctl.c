@@ -335,6 +335,7 @@ static struct ctl_table kern_table[] = {
 		.extra1		= &min_wakeup_granularity_ns,
 		.extra2		= &max_wakeup_granularity_ns,
 	},
+#endif /* CONFIG_SCHED_BFS */
 	{
 		.procname	= "sched_yield_sleep_threshold",
 		.data		= &sysctl_sched_yield_sleep_threshold,
@@ -349,6 +350,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
+#ifndef CONFIG_SCHED_BFS
 #ifdef CONFIG_SMP
 	{
 		.procname	= "sched_tunable_scaling",
