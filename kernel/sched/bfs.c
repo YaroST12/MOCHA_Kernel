@@ -75,7 +75,6 @@
 #include <asm/tlb.h>
 #include <asm/unistd.h>
 #include <asm/mutex.h>
-#include <asm/relaxed.h>
 #ifdef CONFIG_PARAVIRT
 #include <asm/paravirt.h>
 #endif
@@ -925,19 +924,6 @@ static inline u64 do_nr_running_integral(struct rq *rq)
 	nr_running_integral += nr * deltax;
 
 	return nr_running_integral;
-}
-
-int idle_cpu_relaxed(int cpu)
-{
-	struct rq *rq = cpu_rq(cpu);
-
-	if (cpu_relaxed_read_long(&rq->curr) != rq->idle)
-		return 0;
-
-	if (cpu_relaxed_read_long(grq.nr_running))
-		return 0;
-
-	return 1;
 }
 
 /*
