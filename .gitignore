@@ -32,6 +32,9 @@ modules.builtin
 *.lzo
 *.patch
 *.gcno
+*.builtin
+*.xzkern
+arch/arm/boot/compressed/lib1funcs.S
 
 #
 # Top-level generic files
