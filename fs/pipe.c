@@ -365,15 +365,10 @@ pipe_read(struct kiocb *iocb, const struct iovec *_iov,
 			atomic = !iov_fault_in_pages_write(iov, chars);
 			remaining = chars;
 redo:
-			if (atomic)
-				addr = kmap_atomic(buf->page);
-			else
-				addr = kmap(buf->page);
-			error = pipe_iov_copy_to_user(iov, addr, &buf->offset, &remaining, atomic);
-			if (atomic)
-				kunmap_atomic(addr);
-			else
-				kunmap(buf->page);
+			addr = ops->map(pipe, buf, atomic);
+			error = pipe_iov_copy_to_user(iov, addr, &buf->offset,
+						      &remaining, atomic);
+			ops->unmap(pipe, buf, addr);
 			if (unlikely(error)) {
 				/*
 				 * Just retry with the slow path if we failed.
@@ -499,16 +494,10 @@ pipe_write(struct kiocb *iocb, const struct iovec *_iov,
 
 			iov_fault_in_pages_read(iov, chars);
 redo1:
-			if (atomic)
-				addr = kmap_atomic(buf->page);
-			else
-				addr = kmap(buf->page);
+			addr = ops->map(pipe, buf, atomic);
 			error = pipe_iov_copy_from_user(addr, &offset, iov,
 							&remaining, atomic);
-			if (atomic)
-				kunmap_atomic(addr);
-			else
-				kunmap(buf->page);
+			ops->unmap(pipe, buf, addr);
 			ret = error;
 			do_wakeup = 1;
 			if (error) {
