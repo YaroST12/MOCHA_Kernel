@@ -21,7 +21,7 @@
 #include <linux/powersuspend.h>
 #endif
 
-#define MAPLE_IOSCHED_PATCHLEVEL	(2)
+#define MAPLE_IOSCHED_PATCHLEVEL	(3)
 
 enum maple_sync { ASYNC, SYNC };
 
@@ -193,7 +193,7 @@ static int maple_dispatch_requests(struct request_queue *q, int force)
 	}
 
 	if (!rq) {
-		if (mdata->starved > mdata->writes_starved)
+		if (mdata->starved >= mdata->writes_starved)
 			readwrite = WRITE;
 
 		rq = maple_choose_request(mdata, readwrite);
