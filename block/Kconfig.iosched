@@ -21,6 +21,21 @@ config IOSCHED_DEADLINE
 	  a new point in the service tree and doing a batch of IO from there
 	  in case of expiry.
 
+config IOSCHED_ROW
+	tristate "ROW I/O scheduler"
+	default y
+	---help---
+	  The ROW I/O scheduler gives priority to READ requests over the
+	  WRITE requests when dispatching, without starving WRITE requests.
+	  Requests are kept in priority queues. Dispatching is done in a RR
+	  manner when the dispatch quantum for each queue is calculated
+	  according to queue priority.
+	  Most suitable for mobile devices.
+
+config IOSCHED_MAPLE
+	tristate "Maple I/O scheduler"
+	default y
+
 config IOSCHED_CFQ
 	tristate "CFQ I/O scheduler"
 	default y
@@ -64,7 +79,7 @@ config CFQ_GROUP_IOSCHED
 
 choice
 	prompt "Default I/O scheduler"
-	default DEFAULT_TRIPNDROID
+	default DEFAULT_FIOPS
 	help
 	  Select the I/O scheduler which will be used by default for all
 	  block devices.
@@ -74,6 +89,9 @@ choice
 
 	config DEFAULT_CFQ
 		bool "CFQ"
+
+	config DEFAULT_MAPLE
+		bool "Maple"
 
 	config DEFAULT_NOOP
 		bool "No-op"
