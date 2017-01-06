@@ -64,9 +64,9 @@ maple_merged_requests(struct request_queue *q, struct request *rq,
 	 * and move into next position (next will be deleted) in fifo.
 	 */
 	if (!list_empty(&rq->queuelist) && !list_empty(&next->queuelist)) {
-		if (time_before(rq_fifo_time(next), rq_fifo_time(rq))) {
+		if (time_before(next->fifo_time, rq->fifo_time)) {
 			list_move(&rq->queuelist, &next->queuelist);
-			rq_set_fifo_time(rq, rq_fifo_time(next));
+			rq->fifo_time = next->fifo_time;
 		}
 	}
 
@@ -140,7 +140,7 @@ maple_choose_expired_request(struct maple_data *mdata)
 	 */
 
    if (rq_async_read && rq_sync_read) {
-     if (time_after(rq_fifo_time(rq_sync_read), rq_fifo_time(rq_async_read)))
+      if (time_after(rq_sync_read->fifo_time, rq_async_read->fifo_time))
              return rq_async_read;
    } else if (rq_async_read) {
            return rq_async_read;
@@ -149,7 +149,7 @@ maple_choose_expired_request(struct maple_data *mdata)
    }
 
    if (rq_async_write && rq_sync_write) {
-     if (time_after(rq_fifo_time(rq_sync_write), rq_fifo_time(rq_async_write)))
+     if (time_after(rq_sync_write->fifo_time, rq_async_write->fifo_time))
              return rq_async_write;
    } else if (rq_async_write) {
            return rq_async_write;
