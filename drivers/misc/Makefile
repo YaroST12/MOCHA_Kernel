@@ -57,6 +57,7 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
 obj-$(CONFIG_VMWARE_VMCI)	+= vmw_vmci/
 obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
 obj-$(CONFIG_SRAM)		+= sram.o
+<<<<<<< HEAD
 obj-$(CONFIG_SENSORS_NCT1008)	+= nct1008.o
 obj-$(CONFIG_BCM4329_RFKILL)	+= bcm4329_rfkill.o
 CFLAGS_tegra-cryptodev.o	 = -Werror
@@ -86,4 +87,4 @@ obj-y		+= tegra-fuse/
 obj-$(CONFIG_DENVER_CPU)	+= force_idle_t132.o
 obj-$(CONFIG_ARCH_TEGRA)        +=tegra_timerinfo.o
 obj-$(CONFIG_MODS) 		+= mods/
-obj-$(CONFIG_UID_CPUTIME) += uid_cputime.o
+obj-$(CONFIG_UID_SYS_STATS) += uid_sys_stats.o
