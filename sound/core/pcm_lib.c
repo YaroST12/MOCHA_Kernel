@@ -1941,6 +1941,7 @@ static int wait_for_avail(struct snd_pcm_substream *substream,
 		if (!tout) {
 			snd_printd("%s write error (DMA or IRQ trouble?)\n",
 				   is_playback ? "playback" : "capture");
+			xrun(substream);
 			err = -EIO;
 			break;
 		}
