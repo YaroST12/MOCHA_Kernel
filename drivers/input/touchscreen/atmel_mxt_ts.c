@@ -14,6 +14,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/proc_fs.h>
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/firmware.h>
@@ -111,9 +112,6 @@
 
 #define MXT_POWER_CFG_RUN		0
 #define MXT_POWER_CFG_DEEPSLEEP		1
-
-#define MXT_LOCKDOWN_SIZE	8
-#define MXT_CONFIG_INFO_SIZE	8
 
 /* MXT_GEN_ACQUIRE_T8 field */
 #define MXT_ACQUIRE_CHRGTIME	0
@@ -469,6 +467,9 @@
 #define MXT_MAX_FINGER_NUM	10
 #define BOOTLOADER_1664_1188	1
 
+static struct notifier_block fb_notif;
+static bool screen_is_off;
+
 struct mxt_info {
 	u8 family_id;
 	u8 variant_id;
@@ -536,6 +537,7 @@ struct mxt_data {
 	unsigned int max_y;
 	struct bin_attribute mem_access_attr;
 	int debug_enabled;
+	bool enable_keys;
 	bool driver_paused;
 	u8 bootloader_addr;
 	u8 actv_cycle_time;
@@ -574,7 +576,6 @@ struct mxt_data {
 	bool is_hid_protocol;
 	u8 read_buf[64];
 	u8 wakeup_gesture_mode;
-	bool is_in_deep_sleep;
 
 	/* Slowscan parameters	*/
 	int slowscan_enabled;
@@ -650,6 +651,32 @@ static const struct mxt_i2c_address_pair mxt_i2c_addresses[] = {
 	{ 0x35, 0x5b },
 #endif
 };
+
+static int fb_notifier_callback(struct notifier_block *this,
+ 				 unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+ 	int *blank;
+ 
+ 	if (evdata && evdata->data && event == FB_EVENT_BLANK) {
+ 		blank = evdata->data;
+ 		switch (*blank) {
+ 			case FB_BLANK_UNBLANK:
+ 				//display on
+                                screen_is_off = false;
+ 				break;
+ 			case FB_BLANK_POWERDOWN:
+ 			case FB_BLANK_HSYNC_SUSPEND:
+ 			case FB_BLANK_VSYNC_SUSPEND:
+ 			case FB_BLANK_NORMAL:
+ 				//display off
+                                screen_is_off = true;
+ 				break;
+ 		}
+        }
+
+	return NOTIFY_OK;
+}
 
 static int mxt_bootloader_read(struct mxt_data *data, u8 *val, unsigned int count)
 {
@@ -1579,6 +1606,11 @@ static void mxt_proc_t15_messages(struct mxt_data *data, u8 *msg)
 	if (!input_dev || data->driver_paused)
 		return;
 
+        if(!data->enable_keys) {
+                dev_err(&data->client->dev, "keyarray is disabled\n");
+                return;
+        }
+
 	for (key = 0; key < pdata->config_array[index].key_num; key++) {
 		curr_state = test_bit(key, &data->keystatus);
 		new_state = test_bit(key, &keystates);
@@ -1721,12 +1753,11 @@ static void mxt_proc_t93_message(struct mxt_data *data, u8 *msg)
 
 	dev_info(dev, "t93 double click gesture triggerred !\n");
 
-	if (data->is_stopped) {
+	if (screen_is_off) {
 		dev_info(dev, "wakeup OK, do something!\n");
-		input_report_key(input_dev, KEY_WAKEUP, 1);
+		input_event(input_dev, EV_KEY, KEY_POWER, 1);
 		input_sync(input_dev);
-                msleep(10);
-		input_report_key(input_dev, KEY_WAKEUP, 0);
+		input_event(input_dev, EV_KEY, KEY_POWER, 0);
 		input_sync(input_dev);
 	}
 }
@@ -3398,6 +3429,35 @@ static ssize_t mxt_debug_enable_store(struct device *dev,
 	}
 }
 
+static ssize_t mxt_enable_keys_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct mxt_data *data = dev_get_drvdata(dev);
+	int count;
+	char c;
+
+	c = data->enable_keys ? '1' : '0';
+	count = sprintf(buf, "%c\n", c);
+
+	return count;
+}
+
+static ssize_t mxt_enable_keys_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct mxt_data *data = dev_get_drvdata(dev);
+	int i;
+
+	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
+		data->enable_keys = (i == 1);
+
+		dev_dbg(dev, "%s\n", i ? "keys are disabled" : "keys are enabled");
+		return count;
+	} else {
+		dev_dbg(dev, "enable_keys write error\n");
+		return -EINVAL;
+	}
+}
 static int mxt_check_mem_access_params(struct mxt_data *data, loff_t off,
 				       size_t *count)
 {
@@ -4012,6 +4072,8 @@ static ssize_t mxt_mem_access_write(struct file *filp, struct kobject *kobj,
 static DEVICE_ATTR(update_fw, S_IWUSR | S_IRUSR, mxt_update_fw_show, mxt_update_fw_store);
 static DEVICE_ATTR(debug_enable, S_IWUSR | S_IRUSR, mxt_debug_enable_show,
 			mxt_debug_enable_store);
+static DEVICE_ATTR(enable_keys, S_IWUSR | S_IRUSR, mxt_enable_keys_show,
+			mxt_enable_keys_store);
 static DEVICE_ATTR(pause_driver, S_IWUSR | S_IRUSR, mxt_pause_show,
 			mxt_pause_store);
 static DEVICE_ATTR(version, S_IRUGO, mxt_version_show, NULL);
@@ -4031,6 +4093,7 @@ static DEVICE_ATTR(wakeup_mode, S_IWUSR | S_IRUSR, mxt_wakeup_mode_show, mxt_wak
 static struct attribute *mxt_attrs[] = {
 	&dev_attr_update_fw.attr,
 	&dev_attr_debug_enable.attr,
+	&dev_attr_enable_keys.attr,
 	&dev_attr_pause_driver.attr,
 	&dev_attr_version.attr,
 	&dev_attr_build.attr,
@@ -4049,6 +4112,51 @@ static struct attribute *mxt_attrs[] = {
 static const struct attribute_group mxt_attr_group = {
 	.attrs = mxt_attrs,
 };
+
+static int mxt_proc_init()
+{
+	int ret = 0;
+	char *buf, *path = NULL;
+	char *double_tap_sysfs_node, *key_disabler_sysfs_node;;
+	struct proc_dir_entry *proc_entry_tp = NULL;
+	struct proc_dir_entry *proc_symlink_tmp  = NULL;
+
+	buf = kzalloc(PATH_MAX, GFP_KERNEL);
+	if (buf)
+		path = "/sys/devices/platform/tegra12-i2c.3/i2c-3/3-004a";
+
+	proc_entry_tp = proc_mkdir("touchpanel", NULL);
+	if (proc_entry_tp == NULL) {
+		ret = -ENOMEM;
+		pr_err("%s: Couldn't create touchpanel\n", __func__);
+	}
+
+	double_tap_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
+	if (double_tap_sysfs_node)
+		sprintf(double_tap_sysfs_node, "%s/%s", path, "wakeup_mode");
+	proc_symlink_tmp = proc_symlink("double_tap_enable",
+			proc_entry_tp, double_tap_sysfs_node);
+	if (proc_symlink_tmp == NULL) {
+		ret = -ENOMEM;
+		pr_err("%s: Couldn't create double_tap_enable symlink\n", __func__);
+	}
+
+	key_disabler_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
+	if (key_disabler_sysfs_node)
+		sprintf(key_disabler_sysfs_node, "%s/%s", path, "enable_keys");
+	proc_symlink_tmp = proc_symlink("capacitive_keys_enable",
+			proc_entry_tp, key_disabler_sysfs_node);
+	if (proc_symlink_tmp == NULL) {
+		ret = -ENOMEM;
+		pr_err("%s: Couldn't create capacitive_keys_enable symlink\n", __func__);
+	}
+
+	kfree(buf);
+	kfree(double_tap_sysfs_node);
+	kfree(key_disabler_sysfs_node);
+
+	return ret;
+}
 
 static void mxt_set_t7_for_gesture(struct mxt_data *data, bool enable)
 {
@@ -4188,6 +4296,9 @@ static int mxt_suspend(struct device *dev)
 	struct input_dev *input_dev = data->input_dev;
 	char buf[100];
 
+	if (!input_dev)
+ 		return 0;
+
 	if (data->wakeup_gesture_mode) {
 		mutex_lock(&input_dev->mutex);
 		mxt_set_t7_for_gesture(data, true);
@@ -4256,6 +4367,9 @@ static int mxt_resume(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct mxt_data *data = i2c_get_clientdata(client);
 	struct input_dev *input_dev = data->input_dev;
+
+	if (!input_dev)
+ 		return 0;
 
 	if (data->wakeup_gesture_mode) {
 		mutex_lock(&input_dev->mutex);
@@ -4625,6 +4739,7 @@ retry:
 	}
 
 	data->interrupt_ready = true;
+	data->enable_keys = true;
 
 	device_init_wakeup(&client->dev, 1);
 
@@ -4634,6 +4749,8 @@ retry:
 			error);
 		goto err_free_irq;
 	}
+
+	mxt_proc_init();
 
 	sysfs_bin_attr_init(&data->mem_access_attr);
 	data->mem_access_attr.attr.name = "mem_access";
@@ -4731,11 +4848,9 @@ static int mxt_ts_suspend(struct device *dev)
 {
 	struct mxt_data *data =  dev_get_drvdata(dev);
 
-	if (device_may_wakeup(dev) &&
-			data->wakeup_gesture_mode) {
-		dev_info(dev, "touch enable irq wake\n");
+	if (device_may_wakeup(dev) && data->wakeup_gesture_mode) {
+		dev_err(dev, "touch enable irq wake\n");
 		enable_irq_wake(data->client->irq);
-		data->is_in_deep_sleep = true;
 	}
 
 	return 0;
@@ -4745,21 +4860,19 @@ static int mxt_ts_resume(struct device *dev)
 {
 	struct mxt_data *data =  dev_get_drvdata(dev);
 
-	if (device_may_wakeup(dev) &&
-			data->wakeup_gesture_mode) {
-		dev_info(dev, "touch disable irq wake\n");
+	if (device_may_wakeup(dev) && data->wakeup_gesture_mode) {
+		dev_err(dev, "touch disable irq wake\n");
 		disable_irq_wake(data->client->irq);
-		data->is_in_deep_sleep = false;
 	}
 
 	return 0;
 }
 
 static struct dev_pm_ops mxt_touchscreen_pm_ops = {
-//#ifndef CONFIG_HAS_EARLYSUSPEND
+#ifndef CONFIG_HAS_EARLYSUSPEND
 	.suspend	= mxt_ts_suspend,
-	.resume	 = mxt_ts_resume,
-//#endif
+	.resume	        = mxt_ts_resume,
+#endif
 };
 #endif
 
@@ -4787,11 +4900,16 @@ static struct i2c_driver mxt_driver = {
 
 static int __init mxt_init(void)
 {
+        fb_notif.notifier_call = fb_notifier_callback;
+ 	if (fb_register_client(&fb_notif) != 0)
+ 		pr_err("%s: Failed to register fb callback\n", __func__);
+
 	return i2c_add_driver(&mxt_driver);
 }
 
 static void __exit mxt_exit(void)
 {
+        fb_unregister_client(&fb_notif);
 	i2c_del_driver(&mxt_driver);
 }
 
