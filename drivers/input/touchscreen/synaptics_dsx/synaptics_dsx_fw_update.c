@@ -5,7 +5,6 @@
  *
  * Copyright (C) 2012 Alexandra Chin <alexandra.chin@tw.synaptics.com>
  * Copyright (C) 2012 Scott Lin <scott.lin@tw.synaptics.com>
- * Copyright (C) 2016 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +30,6 @@
 
 #define DO_STARTUP_FW_UPDATE
 
-#define STARTUP_FW_UPDATE_DELAY_MS 1000 /* ms */
 #define FORCE_UPDATE false
 #define DO_LOCKDOWN false
 
@@ -92,6 +90,8 @@
 
 #define MIN_SLEEP_TIME_US 50
 #define MAX_SLEEP_TIME_US 100
+
+#define ENTER_FLASH_PROG_WAIT_MS 20
 
 static int fwu_do_reflash(void);
 static int fwu_do_write_config(void);
@@ -284,7 +284,7 @@ struct synaptics_rmi4_fwu_handle {
 	const unsigned char *disp_config_data;
 	const unsigned char *lockdown_data;
 	struct workqueue_struct *fwu_workqueue;
-	struct delayed_work fwu_work;
+	struct work_struct fwu_work;
 	struct synaptics_rmi4_fn_desc f34_fd;
 	struct synaptics_rmi4_data *rmi4_data;
 };
@@ -690,8 +690,14 @@ static enum flash_area fwu_go_nogo(struct image_header_data *header)
 			"%s: Image firmware ID = %d\n",
 			__func__, (unsigned int)image_fw_id);
 
-	if (image_fw_id != device_fw_id) {
+	if (image_fw_id > device_fw_id) {
 		flash_area = UI_FIRMWARE;
+		goto exit;
+	} else if (image_fw_id < device_fw_id) {
+		dev_info(rmi4_data->pdev->dev.parent,
+				"%s: Image firmware ID older than device firmware ID\n",
+				__func__);
+		flash_area = NONE;
 		goto exit;
 	}
 
@@ -726,7 +732,7 @@ static enum flash_area fwu_go_nogo(struct image_header_data *header)
 			fwu->config_data[2],
 			fwu->config_data[3]);
 
-	if (image_config_id != device_config_id) {
+	if (image_config_id > device_config_id) {
 		flash_area = CONFIG_AREA;
 		goto exit;
 	}
@@ -772,7 +778,7 @@ static int fwu_scan_pdt(void)
 			return retval;
 
 		if (rmi_fd.fn_number) {
-			dev_info(rmi4_data->pdev->dev.parent,
+			dev_dbg(rmi4_data->pdev->dev.parent,
 					"%s: Found F%02x\n",
 					__func__, rmi_fd.fn_number);
 			switch (rmi_fd.fn_number) {
@@ -952,6 +958,12 @@ static int fwu_enter_flash_prog(void)
 		return -EINVAL;
 	}
 
+	if (rmi4_data->hw_if->bl_hw_init) {
+		retval = rmi4_data->hw_if->bl_hw_init(rmi4_data);
+		if (retval < 0)
+			return retval;
+	}
+
 	retval = fwu_scan_pdt();
 	if (retval < 0)
 		return retval;
@@ -996,6 +1008,8 @@ static int fwu_enter_flash_prog(void)
 		return retval;
 	}
 
+	msleep(ENTER_FLASH_PROG_WAIT_MS);
+
 	return retval;
 }
 
@@ -1008,7 +1022,7 @@ static int fwu_do_reflash(void)
 	if (retval < 0)
 		return retval;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Bootloader ID written\n",
 			__func__);
 
@@ -1016,7 +1030,7 @@ static int fwu_do_reflash(void)
 	if (retval < 0)
 		return retval;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Erase all command written\n",
 			__func__);
 
@@ -1024,31 +1038,29 @@ static int fwu_do_reflash(void)
 	if (retval < 0)
 		return retval;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Idle status detected\n",
 			__func__);
 
 	if (fwu->firmware_data) {
 		retval = fwu_write_firmware();
-		if (retval < 0) {
-			pr_info("write firmware failed!\n");
+		if (retval < 0)
 			return retval;
-		}
-		pr_info("%s: Firmware programmed\n", __func__);
+		pr_notice("%s: Firmware programmed\n", __func__);
 	}
 
 	if (fwu->config_data) {
 		retval = fwu_write_configuration();
 		if (retval < 0)
 			return retval;
-		pr_info("%s: Configuration programmed\n", __func__);
+		pr_notice("%s: Configuration programmed\n", __func__);
 	}
 
 	if (fwu->disp_config_data) {
 		retval = fwu_write_disp_configuration();
 		if (retval < 0)
 			return retval;
-		pr_info("%s: Display configuration programmed\n", __func__);
+		pr_notice("%s: Display configuration programmed\n", __func__);
 	}
 
 	return retval;
@@ -1068,7 +1080,7 @@ static int fwu_do_write_config(void)
 	if (retval < 0)
 		return retval;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Bootloader ID written\n",
 			__func__);
 
@@ -1088,7 +1100,7 @@ static int fwu_do_write_config(void)
 	if (retval < 0)
 		return retval;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Erase command written\n",
 			__func__);
 
@@ -1096,7 +1108,7 @@ static int fwu_do_write_config(void)
 	if (retval < 0)
 		return retval;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Idle status detected\n",
 			__func__);
 
@@ -1105,7 +1117,7 @@ write_config:
 	if (retval < 0)
 		return retval;
 
-	pr_info("%s: Config written\n", __func__);
+	pr_notice("%s: Config written\n", __func__);
 
 	return retval;
 }
@@ -1163,7 +1175,7 @@ static int fwu_start_write_config(void)
 		}
 	}
 
-	pr_info("%s: Start of write config process\n", __func__);
+	pr_notice("%s: Start of write config process\n", __func__);
 
 	retval = fwu_enter_flash_prog();
 	if (retval < 0)
@@ -1179,7 +1191,7 @@ static int fwu_start_write_config(void)
 exit:
 	rmi4_data->reset_device(rmi4_data);
 
-	pr_info("%s: End of write config process\n", __func__);
+	pr_notice("%s: End of write config process\n", __func__);
 
 	return retval;
 }
@@ -1197,7 +1209,7 @@ static int fwu_do_read_config(void)
 	if (retval < 0)
 		goto exit;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Entered flash prog mode\n",
 			__func__);
 
@@ -1317,7 +1329,7 @@ static int fwu_do_lockdown(void)
 	if (retval < 0)
 		return retval;
 
-	pr_info("%s: Lockdown programmed\n", __func__);
+	pr_notice("%s: Lockdown programmed\n", __func__);
 
 	return retval;
 }
@@ -1343,13 +1355,13 @@ static int fwu_start_reflash(void)
 
 	rmi4_data->stay_awake = true;
 
-	pr_info("%s: Start of reflash process\n", __func__);
+	pr_notice("%s: Start of reflash process\n", __func__);
 
 	if (fwu->ext_data_source) {
 		fw_image = fwu->ext_data_source;
 	} else {
-		strncpy(fwu->image_name, bdata->fw_name, 256);
-		dev_info(rmi4_data->pdev->dev.parent,
+		strncpy(fwu->image_name, bdata->fw_name, MAX_IMAGE_NAME_LEN);
+		dev_dbg(rmi4_data->pdev->dev.parent,
 				"%s: Requesting firmware image %s\n",
 				__func__, fwu->image_name);
 
@@ -1363,7 +1375,7 @@ static int fwu_start_reflash(void)
 			goto exit;
 		}
 
-		dev_info(rmi4_data->pdev->dev.parent,
+		dev_dbg(rmi4_data->pdev->dev.parent,
 				"%s: Firmware image size = %d\n",
 				__func__, fw_entry->size);
 
@@ -1410,7 +1422,6 @@ static int fwu_start_reflash(void)
 		}
 	}
 
-	pr_info("s3528 firmware size = %d\n", (int)header.firmware_size);
 	if (header.firmware_size)
 		fwu->firmware_data = fw_image + IMAGE_AREA_OFFSET;
 	else
@@ -1466,7 +1477,7 @@ exit:
 	if (fw_entry)
 		release_firmware(fw_entry);
 
-	pr_info("%s: End of reflash process\n", __func__);
+	pr_notice("%s: End of reflash process\n", __func__);
 
 	rmi4_data->stay_awake = false;
 
@@ -1760,7 +1771,7 @@ static int synaptics_rmi4_fwu_init(struct synaptics_rmi4_data *rmi4_data)
 			pdt_props.data,
 			sizeof(pdt_props.data));
 	if (retval < 0) {
-		dev_info(rmi4_data->pdev->dev.parent,
+		dev_dbg(rmi4_data->pdev->dev.parent,
 				"%s: Failed to read PDT properties, assuming 0x00\n",
 				__func__);
 	} else if (pdt_props.has_bsr) {
@@ -1781,10 +1792,10 @@ static int synaptics_rmi4_fwu_init(struct synaptics_rmi4_data *rmi4_data)
 			SYNAPTICS_RMI4_PRODUCT_ID_SIZE);
 	fwu->product_id[SYNAPTICS_RMI4_PRODUCT_ID_SIZE] = 0;
 
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: F01 product info: 0x%04x 0x%04x\n",
 			__func__, fwu->productinfo1, fwu->productinfo2);
-	dev_info(rmi4_data->pdev->dev.parent,
+	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: F01 product ID: %s\n",
 			__func__, fwu->product_id);
 
@@ -1819,10 +1830,9 @@ static int synaptics_rmi4_fwu_init(struct synaptics_rmi4_data *rmi4_data)
 
 #ifdef DO_STARTUP_FW_UPDATE
 	fwu->fwu_workqueue = create_singlethread_workqueue("fwu_workqueue");
-	INIT_DELAYED_WORK(&fwu->fwu_work, fwu_startup_fw_update_work);
-	queue_delayed_work(fwu->fwu_workqueue,
-			&fwu->fwu_work,
-			msecs_to_jiffies(STARTUP_FW_UPDATE_DELAY_MS));
+	INIT_WORK(&fwu->fwu_work, fwu_startup_fw_update_work);
+	queue_work(fwu->fwu_workqueue,
+			&fwu->fwu_work);
 #endif
 
 	return 0;
@@ -1852,6 +1862,12 @@ static void synaptics_rmi4_fwu_remove(struct synaptics_rmi4_data *rmi4_data)
 
 	if (!fwu)
 		goto exit;
+
+#ifdef DO_STARTUP_FW_UPDATE
+	cancel_work_sync(&fwu->fwu_work);
+	flush_workqueue(fwu->fwu_workqueue);
+	destroy_workqueue(fwu->fwu_workqueue);
+#endif
 
 	for (attr_count = 0; attr_count < ARRAY_SIZE(attrs); attr_count++) {
 		sysfs_remove_file(&rmi4_data->input_dev->dev.kobj,
