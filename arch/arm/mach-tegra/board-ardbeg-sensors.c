@@ -759,7 +759,7 @@ static struct pid_thermal_gov_params cpu_pid_params = {
 };
 
 static struct thermal_zone_params cpu_tzp = {
-	.governor_name = "pid_thermal_gov",
+	.governor_name = "step_wise",
 	.governor_params = &cpu_pid_params,
 };
 
@@ -986,21 +986,21 @@ static struct therm_est_subdevice skin_devs[] = {
 	{
 		.dev_data = "Tdiode_tegra",
 		.coeffs = {
-			2, 2, 1, 1,
-			1, 0, 0, 0,
-			0, 0, 0, 0,
-			0, 0, 0, 0,
-			0, 0, 2, 3
+			2, 1, 1, 1,
+			1, 1, 1, 1,
+			1, 1, 1, 0,
+			1, 1, 0, 0,
+			0, 0, -1, -7
 		},
 	},
 	{
 		.dev_data = "Tboard_tegra",
 		.coeffs = {
-			-5, 1, 0, 1,
-			1, 0, 1, 1,
-			0, 2, -1, 1,
-			2, 3, 3, 2,
-			2, 1, 8, 53
+			-11, -7, -5, -3,
+			-3, -2, -1, 0,
+			0, 0, 1, 1,
+			1, 2, 2, 3,
+			4, 6, 11, 18
 		},
 	},
 };
@@ -1040,7 +1040,7 @@ static struct pid_thermal_gov_params skin_pid_params = {
 };
 
 static struct thermal_zone_params skin_tzp = {
-	.governor_name = "pid_thermal_gov",
+	.governor_name = "step_wise",
 	.governor_params = &skin_pid_params,
 };
 
