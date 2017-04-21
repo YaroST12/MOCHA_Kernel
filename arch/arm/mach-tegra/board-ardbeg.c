@@ -1650,7 +1650,6 @@ static void __init tegra_ardbeg_late_init(void)
 #endif
 	add_bcm_ldisc_device();
 	tegra_register_fuse();
-
 	ardbeg_sysedp_dynamic_capping_init();
 	ardbeg_sysedp_batmon_init();
 }
