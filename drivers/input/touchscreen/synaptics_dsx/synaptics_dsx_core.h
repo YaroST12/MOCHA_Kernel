@@ -127,6 +127,7 @@ struct synaptics_rmi4_fn_full_addr {
 
 struct synaptics_rmi4_f12_extra_data {
 	unsigned char data1_offset;
+	unsigned char data4_offset;
 	unsigned char data15_offset;
 	unsigned char data15_size;
 	unsigned char data15_data[(F12_FINGERS_TO_SUPPORT + 7) / 8];
@@ -244,6 +245,7 @@ struct synaptics_rmi4_data {
 	int irq;
 	int sensor_max_x;
 	int sensor_max_y;
+	bool touch_stopped;
 	bool flash_prog_mode;
 	bool irq_enabled;
 	bool fingers_on_2d;
