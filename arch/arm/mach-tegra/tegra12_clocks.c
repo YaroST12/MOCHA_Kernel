@@ -9293,6 +9293,7 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
+	unsigned long emc_rate;
 
 	if (emc_max_rate == 0)
 		emc_max_rate = clk_round_rate(
@@ -9300,28 +9301,18 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 
 	/* Vote on memory bus frequency based on cpu frequency;
 	   cpu rate is in kHz, emc rate is in Hz */
-	if (cpu_rate >= 1800000)
-		return 600000000; /* cpu >= 1.8GHz, emc rate down for adaptive term */
-	else if (cpu_rate >= 1700000)
-		return 792000000;	/* cpu >= 1.7GHz, emc rate down for adaptive term */
-	else if (cpu_rate >= 1600000)
-		return emc_max_rate;	/* cpu >= 1.6GHz, emc max rate */
-	else if (cpu_rate >= 1500000)
-		return 792000000;	/* cpu >= 1.4GHz, emc 792mhz */
-	else if (cpu_rate >= 1200000)
-		return 600000000;	/* cpu >= 1.2GHz, emc 600mhz */
-	else if (cpu_rate >= 1100000)
-		return 528000000;	/* cpu >= 1.1GHz, emc 528mhz */
-	else if (cpu_rate >= 975000)
-		return 400000000;	/* cpu >= 975 MHz, emc 400 MHz */
-	else if (cpu_rate >= 725000)
-		return  200000000;	/* cpu >= 725 MHz, emc 200 MHz */
-	else if (cpu_rate >= 500000)
-		return  100000000;	/* cpu >= 500 MHz, emc 100 MHz */
-	else if (cpu_rate >= 275000)
-		return  50000000;	/* cpu >= 275 MHz, emc 50 MHz */
-	else
-		return 0;		/* emc min */
+    /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
+    /* We dont use 528 mHz cause of overheat on it*/
+         if (cpu_rate > 2000000)
+		return 792000000;
+	else if (cpu_rate > 1500000)
+		return 924000000;
+	else if (cpu_rate > 1000000)
+		return 396000000;
+	else if (cpu_rate > 200000)
+		return 300000000;
+    else
+        return 204000000;
 }
 
 unsigned long tegra_emc_cpu_limit(unsigned long cpu_rate)
