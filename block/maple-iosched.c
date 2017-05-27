@@ -19,11 +19,11 @@
 
 enum maple_sync { ASYNC, SYNC };
 
-static const int sync_read_expire  = HZ / 2;    /* max time before a read sync is submitted. */
-static const int sync_write_expire  = HZ / 2;    /* max time before a write sync is submitted. */
-static const int async_read_expire = 5 * HZ;    /* ditto for read async, these limits are SOFT! */
-static const int async_write_expire = 5 * HZ;    /* ditto for write async, these limits are SOFT! */
-static const int fifo_batch = 16;
+static const int sync_read_expire  = 100;    /* max time before a read sync is submitted. */
+static const int sync_write_expire  = 100;    /* max time before a write sync is submitted. */
+static const int async_read_expire = 500;    /* ditto for read async, these limits are SOFT! */
+static const int async_write_expire = 500;    /* ditto for write async, these limits are SOFT! */
+static const int fifo_batch = 3;
 static const int writes_starved = 1;	/* max times reads can starve a write */
 static const int sleep_latency_multiple = 3;	/* multple for expire time when device is asleep */
 
