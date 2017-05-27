@@ -32,10 +32,6 @@ config IOSCHED_ROW
 	  according to queue priority.
 	  Most suitable for mobile devices.
 
-config IOSCHED_MAPLE
-	tristate "Maple I/O scheduler"
-	default y
-
 config IOSCHED_CFQ
 	tristate "CFQ I/O scheduler"
 	default y
@@ -101,10 +97,6 @@ choice
 
 	config DEFAULT_ZEN
 		bool "Zen"
-
-	config DEFAULT_MAPLE
-		bool "Maple"
-
 endchoice
 
 config DEFAULT_IOSCHED
