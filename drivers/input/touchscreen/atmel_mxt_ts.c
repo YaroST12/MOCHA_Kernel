@@ -4074,7 +4074,7 @@ static DEVICE_ATTR(debug_enable, S_IWUSR | S_IRUSR, mxt_debug_enable_show,
 			mxt_debug_enable_store);
 static DEVICE_ATTR(enable_keys, S_IWUSR | S_IRUSR, mxt_enable_keys_show,
 			mxt_enable_keys_store);
-tatic DEVICE_ATTR(pause_driver, S_IWUSR | S_IRUSR, mxt_pause_show,
+static DEVICE_ATTR(pause_driver, S_IWUSR | S_IRUSR, mxt_pause_show,
 			mxt_pause_store);
 static DEVICE_ATTR(version, S_IRUGO, mxt_version_show, NULL);
 static DEVICE_ATTR(build, S_IRUGO, mxt_build_show, NULL);
