@@ -158,7 +158,7 @@ VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
 
 export srctree objtree VPATH
 
-
+CCACHE := $(shell which ccache)
 # SUBARCH tells the usermode build what the underlying arch is.  That is set
 # first, and if a usermode build is happening, the "ARCH=um" on the command
 # line overrides the setting of ARCH below.  If a native build is happening,
@@ -239,9 +239,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-HOSTCC       = gcc
-HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCC       = $(CCACHE) gcc
+HOSTCXX      = $(CCACHE) g++
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
 HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
@@ -324,10 +324,16 @@ include $(srctree)/scripts/Kbuild.include
 
 # Make variables (CC, etc...)
 
-AS		= $(CROSS_COMPILE)as
+OPTIMIZEFLAGS   = -O2 -mtune=cortex-a15 -mfloat-abi=softfp
+OPTIMIZEFLAGS 	+= -fmodulo-sched -fmodulo-sched-allow-regmoves
+OPTIMIZEFLAGS 	+= -ftree-loop-distribution -fivopts
+OPTIMIZEFLAGS 	+= -fira-algorithm=priority
+
+AS		= $(CROSS_COMPILE)as $(CROSS_COMPILE)gcc
 LD		= $(CROSS_COMPILE)ld
-CC		= $(CROSS_COMPILE)gcc
-CPP		= $(CC) -E
+LD		+= -O2 --strip-debug --hash-style=gnu -flto -Bsymbolic-functions
+CC		= $(CCACHE) $(CROSS_COMPILE)gcc $(OPTIMIZEFLAGS)
+CPP		= $(CC) -E -fvisibility-inlines-hidden
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
@@ -344,11 +350,18 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
+LDFLAGS_MODULE  = --strip-debug
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
+ARM_ARCH_OPT := -O2 -mtune=cortex-a15 -mfloat-abi=softfp
+GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT)) \
+ -g0 \
+ -DNDEBUG \
+ -fmodulo-sched \
+ -fmodulo-sched-allow-regmoves \
+ -fivopts
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := \
@@ -373,12 +386,22 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
-KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL :=
+		   -fno-delete-null-pointer-checks \
+		   -std=gnu89 \
+		   $(GEN_OPT_FLAGS)
+
+# Thanks gcc!
+KBUILD_CFLAGS   += -Wno-unused-label -Wno-array-bounds -Wno-memset-transposed-args \
+		   -Wno-unused-function -Wno-declaration-after-statement \
+		   -Wno-unused-variable -Wno-parentheses -Wno-maybe-uninitialized \
+		   -Wno-misleading-indentation -Wno-bool-compare -Wno-int-conversion \
+		   -Wno-discarded-qualifiers -Wno-tautological-compare -Wno-incompatible-pointer-types
+
+KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS)
+KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS)
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
+KBUILD_AFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
+KBUILD_CFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -570,16 +593,6 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-else
-ifdef CONFIG_LESS_GCC_OPT
-KBUILD_CFLAGS	+= -O1
-else
-KBUILD_CFLAGS	+= -O2
-endif
-endif
-
 # conserve stack if available
 # do this early so that an architecture can override it.
 KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
@@ -597,7 +610,7 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
 endif
 
 ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+KBUILD_CFLAGS += $(call cc-option)
 endif
 
 # Force gcc to behave correct even for buggy distributions
@@ -621,6 +634,8 @@ ifndef CONFIG_FUNCTION_TRACER
 KBUILD_CFLAGS	+= -fomit-frame-pointer
 endif
 endif
+
+KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
 
 ifdef CONFIG_DEBUG_INFO
 KBUILD_CFLAGS	+= -g
