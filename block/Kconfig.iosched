@@ -4,7 +4,7 @@ menu "IO Schedulers"
 
 config IOSCHED_NOOP
 	bool
-	default y
+	default n
 	---help---
 	  The no-op I/O scheduler is a minimal scheduler that does basic merging
 	  and sorting. Its main uses include non-disk based block devices like
@@ -23,7 +23,7 @@ config IOSCHED_DEADLINE
 
 config IOSCHED_ROW
 	tristate "ROW I/O scheduler"
-	default y
+	default n
 	---help---
 	  The ROW I/O scheduler gives priority to READ requests over the
 	  WRITE requests when dispatching, without starving WRITE requests.
@@ -34,7 +34,7 @@ config IOSCHED_ROW
 
 config IOSCHED_SIO
 	tristate "Simple I/O scheduler"
-	default y
+	default n
 	---help---
 	The Simple I/O scheduler is an extremely simple scheduler,
 	based on noop and deadline, that relies on deadlines to
