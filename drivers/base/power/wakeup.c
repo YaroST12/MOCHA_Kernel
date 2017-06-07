@@ -369,6 +369,20 @@ int device_set_wakeup_enable(struct device *dev, bool enable)
 }
 EXPORT_SYMBOL_GPL(device_set_wakeup_enable);
 
+/**
+ * wakeup_source_not_registered - validate the given wakeup source.
+ * @ws: Wakeup source to be validated.
+ */
+static bool wakeup_source_not_registered(struct wakeup_source *ws)
+{
+	/*
+	 * Use timer struct to check if the given source is initialized
+	 * by wakeup_source_add.
+	 */
+	return ws->timer.function != pm_wakeup_timer_fn ||
+		   ws->timer.data != (unsigned long)ws;
+}
+
 /*
  * The functions below use the observation that each wakeup event starts a
  * period in which the system should not be suspended.  The moment this period
@@ -409,32 +423,16 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 {
 	unsigned int cec;
 
+	if (WARN(wakeup_source_not_registered(ws),
+			"unregistered wakeup source\n"))
+		return;
+
 	/*
 	 * active wakeup source should bring the system
 	 * out of PM_SUSPEND_FREEZE state
 	 */
 	freeze_wake();
 
-	if (((!enable_si_ws && !strcmp(ws->name, "sensor_ind")) ||
-		(!enable_wlan_rx_wake_ws &&
-			!strcmp(ws->name, "wlan_rx_wake")) ||
-		(!enable_wlan_ctrl_wake_ws &&
-			!strcmp(ws->name, "wlan_ctrl_wake")) ||
-		(!enable_wlan_wake_ws &&
-			!strcmp(ws->name, "wlan_wake")) ||
-		(!enable_msm_hsic_ws &&
-			!strcmp(ws->name, "msm_hsic_host")) ||
-		(!enable_bluedroid_timer_ws &&
-			!strcmp(ws->name, "bluedroid_timer")) ||
-		(!enable_bluesleep_ws && !strcmp(ws->name, "bluesleep")))) {
-		/*
-		 * let's try and deactivate this wakeup source since the user
-		 * clearly doesn't want it. The user is responsible for any
-		 * adverse effects and has been warned about it
-		 */
-		wakeup_source_deactivate(ws);
-		return;
-	}
 	ws->active = true;
 	ws->active_count++;
 	ws->last_time = ktime_get();
