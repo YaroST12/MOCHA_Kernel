@@ -9303,7 +9303,7 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
     /* We dont use 528 mHz cause of overheat on it*/
-    if (cpu_rate > 1600000)
+    if (cpu_rate > 1850000)
 		return 924000000;
 	else if (cpu_rate > 1300000)
 		return 792000000;
