@@ -241,8 +241,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -fgcse-las -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers -Wno-unused-variable -Wno-unused-value
-HOSTCXXFLAGS = -O3 -fgcse-las -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers -Wno-unused-variable -Wno-unused-value
+HOSTCXXFLAGS = -O3 -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe
+
 
 
 # Decide whether to build built-in, modular, or both.
@@ -358,7 +359,7 @@ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 ARM_ARCH_OPT := -O3 -mtune=cortex-a15 -mfloat-abi=softfp
 GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT)) \
- -g0 \
+ -g0 -O3 -pipe \
  -DNDEBUG \
  -fmodulo-sched \
  -fmodulo-sched-allow-regmoves \
