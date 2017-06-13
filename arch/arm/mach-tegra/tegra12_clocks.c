@@ -9305,9 +9305,11 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
     /* We dont use 528 mHz cause of overheat on it*/
     if (cpu_rate > 1850000)
 		return 924000000;
-	else if (cpu_rate > 1300000)
+	else if (cpu_rate > 1550000)
 		return 792000000;
-	else if (cpu_rate > 1000000)
+	else if (cpu_rate > 1350000)
+		return 600000000;
+	else if (cpu_rate > 850000)
 		return 396000000;
 	else if (cpu_rate > 200000)
 		return 300000000;
