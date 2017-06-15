@@ -9293,6 +9293,7 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
+	static unsigned long last_emc_rate;
 	unsigned long emc_rate;
 
 	if (emc_max_rate == 0)
@@ -9302,19 +9303,36 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	/* Vote on memory bus frequency based on cpu frequency;
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
-    /* We dont use 528 mHz cause of overheat on it*/
-    if (cpu_rate > 1850000)
+
+    if (cpu_rate > 1836000)
 		return 924000000;
-	else if (cpu_rate > 1550000)
+	else if (cpu_rate > 1530000)
 		return 792000000;
-	else if (cpu_rate > 1350000)
+	else if (cpu_rate > 1224000)
 		return 600000000;
-	else if (cpu_rate > 850000)
+	else if (cpu_rate > 828000)
 		return 396000000;
-	else if (cpu_rate > 200000)
+	else if (cpu_rate >= 312000)
 		return 300000000;
+
+#ifdef CONFIG_SOFT_EMC_CONTROL
+
+/*Allow EMC rate settle a little while before going to min*/
+	if (emc_rate = 300000000)
+		udelay(800);
+    emc_rate = 0;
+	return emc_rate;
+
+/*Allow EMC rate settle a little while before going to lower freq*/
+	if (emc_rate < last_emc_rate)
+		udelay(200);
+    last_emc_rate = emc_rate;
+	return emc_rate;
+
+#else
     else
         return 0;
+#endif
 }
 
 unsigned long tegra_emc_cpu_limit(unsigned long cpu_rate)
