@@ -436,6 +436,10 @@ config TEGRA_EMC_SCALING_ENABLE
 	bool "Enable scaling the memory frequency"
 	default n
 
+config SOFT_EMC_CONTROL
+    bool "Enable softer EMC freq control"
+    default n
+
 config TEGRA_CPU_DVFS
 	bool "Enable voltage scaling on Tegra CPU"
 	default y
