@@ -9312,8 +9312,10 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		return 600000000;
 	else if (cpu_rate >= 828000)
 		return 396000000;
+	else if (cpu_rate >= 312000)
+		return 300000000;
 #ifdef CONFIG_SOFT_EMC_CONTROL
-    else if (emc_rate = 396000000)
+    else if (emc_rate = 300000000)
         		udelay(500);
 	    return 0;
 #else
