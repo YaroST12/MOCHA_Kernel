@@ -30,6 +30,7 @@
 #include <linux/file.h>
 #include <linux/workqueue.h>
 #include <linux/console.h>
+#include <linux/lcd_notify.h>
 
 #include <asm/atomic.h>
 
@@ -299,6 +300,8 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 	switch (blank) {
 	case FB_BLANK_UNBLANK:
 		dev_dbg(&tegra_fb->ndev->dev, "unblank\n");
+                pr_info("panel:LCD_EVENT_ON_START");
+                lcd_notifier_call_chain(LCD_EVENT_ON_START, NULL);
                 pr_info("panel: %s  FB_BLANK_UNBLANK  +++\n", __func__);
                 /* Turn off seamless transistion mode after
                    first update from android */
@@ -311,6 +314,8 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 			tegra_dc_program_bandwidth(dc, true);
 
 		dc->blanked = false;
+                lcd_notifier_call_chain(LCD_EVENT_ON_END, NULL);
+                pr_info("panel:LCD_EVENT_ON_END");
                 pr_info("panel: %s  FB_BLANK_UNBLANK  +++ return!\n", __func__);
 		return 0;
 
@@ -327,6 +332,8 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 	case FB_BLANK_HSYNC_SUSPEND:
 	case FB_BLANK_POWERDOWN:
 		dev_dbg(&tegra_fb->ndev->dev, "blank - powerdown\n");
+                pr_info("panel:LCD_EVENT_OFF_START");
+                lcd_notifier_call_chain(LCD_EVENT_OFF_START, NULL);
                 pr_info("panel: %s  FB_BLANK_POWERDOWN ---\n", __func__);
                 /* Skip powerdown to support seamless transistion
                    from bootloader to android display */
@@ -336,6 +343,8 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 		/* To pan fb while switching from X */
 		if (!dc->suspended && dc->enabled)
 			tegra_fb->curr_xoffset = -1;
+                pr_info("panel:LCD_EVENT_OFF_END");
+                lcd_notifier_call_chain(LCD_EVENT_OFF_END, NULL);
                 tegra_dc_disable(dc);
                 pr_info("panel: %s  FB_BLANK_POWERDOWN --- return!\n", __func__);
 		return 0;
