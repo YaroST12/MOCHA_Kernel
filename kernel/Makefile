@@ -101,7 +101,8 @@ obj-$(CONFIG_TRACE_CLOCK) += trace/
 obj-$(CONFIG_RING_BUFFER) += trace/
 obj-$(CONFIG_TRACEPOINTS) += trace/
 obj-$(CONFIG_IRQ_WORK) += irq_work.o
-obj-$(CONFIG_CPU_PM) += cpu_pm.o
+obj-$(CONFIG_CPU_PM) += cpu_pm.o 
+obj-$(CONFIG_STATE_NOTIFIER) += state_notifier.o
 
 obj-$(CONFIG_PERF_EVENTS) += events/
 
