@@ -117,6 +117,10 @@ config FB_TEGRA
 	help
 	  Framebuffer device support for the Tegra display controller.
 
+config LCD_NOTIFY
+    bool "LCD notifier"
+    default y
+
 config TEGRA_DC_EXTENSIONS
 	bool "Tegra Display Controller Extensions"
 	depends on TEGRA_DC

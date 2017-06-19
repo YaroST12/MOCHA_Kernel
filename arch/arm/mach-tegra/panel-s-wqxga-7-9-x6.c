@@ -28,6 +28,7 @@
 #include <linux/leds.h>
 #include <linux/ioport.h>
 #include <linux/state_notifier.h>
+#include <linux/lcd_notify.h>
 #include <generated/mach-types.h>
 #include "board.h"
 #include "board-panel.h"
@@ -171,6 +172,7 @@ static int dsi_s_wqxga_7_9_enable(struct device *dev)
 {
 	int err = 0;
  		    state_resume();
+            lcd_notifier_call_chain(LCD_EVENT_ON_START, NULL);
 
 	struct tegra_dc_out *mocha_disp_out =
 		((struct tegra_dc_platform_data *)
@@ -232,6 +234,7 @@ static int dsi_s_wqxga_7_9_enable(struct device *dev)
 #endif
 
 	return 0;
+    lcd_notifier_call_chain(LCD_EVENT_ON_END, NULL);
 fail:
 	return err;
 
@@ -240,6 +243,7 @@ fail:
 static int dsi_s_wqxga_7_9_disable(void)
 {
      		state_suspend();
+            lcd_notifier_call_chain(LCD_EVENT_OFF_START, NULL);
 	pr_info("panel: %s\n", __func__);
 	gpio_set_value(dsi_s_wqxga_7_9_pdata.dsi_panel_rst_gpio, 0);
 	msleep(10);
@@ -252,6 +256,7 @@ static int dsi_s_wqxga_7_9_disable(void)
 	if (dvdd_lcd_1v8)
 		regulator_disable(dvdd_lcd_1v8);
 	return 0;
+            lcd_notifier_call_chain(LCD_EVENT_OFF_END, NULL);
 }
 
 static int dsi_s_wqxga_7_9_postsuspend(void)
