@@ -20,7 +20,7 @@
 #include <linux/state_notifier.h>
 
 #define NOOP_IOSCHED "noop"
-#define RESTORE_DELAY_MS (10000)
+#define RESTORE_DELAY_MS (1000)
 
 struct req_queue_data {
 	struct list_head list;
@@ -66,13 +66,14 @@ static int state_notifier_callback(struct notifier_block *this,
 				unsigned long event, void *data)
 {
 	switch (event) {
-		case STATE_NOTIFIER_ACTIVE:
+	    case STATE_NOTIFIER_ACTIVE:
 			/*
 			 * Switch back from noop to the original iosched after a delay
 			 * when the screen is turned on.
 			 */
 			schedule_delayed_work(&restore_prev,
 				msecs_to_jiffies(RESTORE_DELAY_MS));
+                	pr_info("State ACTIVE - noop is OFF###############");
 			break;
 		case STATE_NOTIFIER_SUSPEND:
 			/*
@@ -81,7 +82,8 @@ static int state_notifier_callback(struct notifier_block *this,
 			 * when switching elevators while the screen is off.
 			 */
 			cancel_delayed_work_sync(&restore_prev);
-			change_all_elevators(&req_queues.list, true);
+			    change_all_elevators(&req_queues.list, true);
+                	pr_info("State SUSPEND - noop is ON###############");
 			break;
 		default:
 			break;
