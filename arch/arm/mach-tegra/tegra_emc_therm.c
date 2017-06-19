@@ -101,7 +101,7 @@ static int tegra_dram_temp_start(void)
 {
 	int err;
 
-	pr_info("[dram-therm] Starting DRAM temperature polling.\n");
+	//pr_info("[dram-therm] Starting DRAM temperature polling.\n");
 
 	err = mod_timer(&emc_mr4_timer,
 			jiffies + msecs_to_jiffies(emc_mr4_sample_interval));
@@ -120,7 +120,7 @@ static int tegra_dram_temp_start(void)
  */
 static void tegra_dram_temp_stop(void)
 {
-	pr_info("[dram-therm] Stopping DRAM temperature polling.\n");
+	//pr_info("[dram-therm] Stopping DRAM temperature polling.\n");
 	atomic_set(&do_poll, 0);
 }
 
