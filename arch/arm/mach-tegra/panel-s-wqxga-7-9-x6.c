@@ -27,6 +27,7 @@
 #include <linux/platform_data/lp855x.h>
 #include <linux/leds.h>
 #include <linux/ioport.h>
+#include <linux/state_notifier.h>
 #include <generated/mach-types.h>
 #include "board.h"
 #include "board-panel.h"
@@ -169,6 +170,7 @@ static int dsi_s_wqxga_7_9_postpoweron(struct device *dev)
 static int dsi_s_wqxga_7_9_enable(struct device *dev)
 {
 	int err = 0;
+ 		    state_resume();
 
 	struct tegra_dc_out *mocha_disp_out =
 		((struct tegra_dc_platform_data *)
@@ -237,6 +239,8 @@ fail:
 
 static int dsi_s_wqxga_7_9_disable(void)
 {
+	        //state_notifier_call_chain(STATE_NOTIFIER_SUSPEND, NULL);
+     		state_suspend();
 	pr_info("panel: %s\n", __func__);
 	gpio_set_value(dsi_s_wqxga_7_9_pdata.dsi_panel_rst_gpio, 0);
 	msleep(10);
@@ -248,7 +252,6 @@ static int dsi_s_wqxga_7_9_disable(void)
 	msleep(10);
 	if (dvdd_lcd_1v8)
 		regulator_disable(dvdd_lcd_1v8);
-
 	return 0;
 }
 
