@@ -25,6 +25,7 @@ obj-$(CONFIG_IOSCHED_SIO)       += sio-iosched.o
 obj-$(CONFIG_IOSCHED_BFQ)	+= bfq-iosched.o
 obj-$(CONFIG_IOSCHED_FIFO)	+= fifo-iosched.o
 obj-$(CONFIG_IOSCHED_VR)	+= vr-iosched.o
+obj-$(CONFIG_IOSCHED_SIOPLUS)	+= sioplus-iosched.o
 obj-$(CONFIG_IOSCHED_SWITCHER) += iosched_switcher.o
 
 obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
