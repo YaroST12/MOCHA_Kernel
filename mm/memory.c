@@ -1660,12 +1660,6 @@ no_page_table:
 	return page;
 }
 
-static inline int stack_guard_page(struct vm_area_struct *vma, unsigned long addr)
-{
-	return stack_guard_page_start(vma, addr) ||
-	       stack_guard_page_end(vma, addr+PAGE_SIZE);
-}
-
 /**
  * replace_cma_page() - migrate page out of CMA page blocks
  * @page:	source page to be migrated
@@ -3229,6 +3223,7 @@ out_release:
 }
 
 /*
+<<<<<<< HEAD
  * This is like a special single-page "expand_{down|up}wards()",
  * except we must first make sure that 'address{-|+}PAGE_SIZE'
  * doesn't hit another vma.
@@ -3264,6 +3259,8 @@ static inline int check_stack_guard_page(struct vm_area_struct *vma, unsigned lo
 
 bool is_vma_temporary_stack(struct vm_area_struct *vma);
 /*
+=======
+>>>>>>> 1ad9a25... mm: larger stack guard gap, between vmas
  * We enter with non-exclusive mmap_sem (to exclude vma changes,
  * but allow concurrent faults), and pte mapped but not yet locked.
  * We return with mmap_sem still held, but pte unmapped and unlocked.
@@ -3281,10 +3278,6 @@ static int do_anonymous_page(struct mm_struct *mm, struct vm_area_struct *vma,
 	/* File mapping without ->vm_ops ? */
 	if (vma->vm_flags & VM_SHARED)
 		return VM_FAULT_SIGBUS;
-
-	/* Check if we need to add a guard page to the stack */
-	if (check_stack_guard_page(vma, address) < 0)
-		return VM_FAULT_SIGSEGV;
 
 	/* Use the zero-page for reads */
 	if (!(flags & FAULT_FLAG_WRITE)) {
