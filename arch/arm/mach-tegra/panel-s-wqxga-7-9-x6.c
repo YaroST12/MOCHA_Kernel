@@ -239,7 +239,6 @@ fail:
 
 static int dsi_s_wqxga_7_9_disable(void)
 {
-	        //state_notifier_call_chain(STATE_NOTIFIER_SUSPEND, NULL);
      		state_suspend();
 	pr_info("panel: %s\n", __func__);
 	gpio_set_value(dsi_s_wqxga_7_9_pdata.dsi_panel_rst_gpio, 0);
