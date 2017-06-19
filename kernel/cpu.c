@@ -19,9 +19,6 @@
 #include <linux/mutex.h>
 #include <linux/gfp.h>
 #include <linux/suspend.h>
-#ifdef CONFIG_STATE_NOTIFIER
-#include <linux/state_notifier.h>
-#endif
 #include <trace/events/power.h>
 
 
@@ -502,10 +499,6 @@ int disable_nonboot_cpus(void)
 	cpumask_clear(frozen_cpus);
 
 	printk("Disabling non-boot CPUs ...\n");
-#ifdef CONFIG_STATE_NOTIFIER
-	printk("State suspended###############");
- 		state_suspend();
-#endif
 	for_each_online_cpu(cpu) {
 		if (cpu == first_cpu)
 			continue;
@@ -549,11 +542,6 @@ void __ref enable_nonboot_cpus(void)
 		goto out;
 
 	printk(KERN_INFO "Enabling non-boot CPUs ...\n");
-
-#ifdef CONFIG_STATE_NOTIFIER
-	printk(KERN_INFO "State resumed##############");
- 		state_resume();
-#endif
 
 	arch_enable_nonboot_cpus_begin();
 
