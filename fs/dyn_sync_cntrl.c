@@ -18,12 +18,7 @@
 #include <linux/blkdev.h>
 #include <linux/blk_types.h>
 #include <linux/elevator.h>
-#ifdef CONFIG_LCD_NOTIF
-#include <linux/lcd_notify.h>
-#endif
-#ifdef CONFIG_STATE_NOTIFIER
 #include <linux/state_notifier.h>
-#endif
 
 // fsync_mutex protects dyn_fsync_active during suspend / late resume transitions
 static DEFINE_MUTEX(fsync_mutex);
@@ -34,12 +29,7 @@ static DEFINE_MUTEX(fsync_mutex);
 bool suspend_active __read_mostly = false;
 bool dyn_fsync_active __read_mostly = DYN_FSYNC_ACTIVE_DEFAULT;
 
-#ifdef CONFIG_LCD_NOTIF
-static struct notifier_block lcd_notif;
-#endif
-#ifdef CONFIG_STATE_NOTIFIER
 static struct notifier_block notif;
-#endif
 
 extern void sync_filesystems(int wait);
 
@@ -126,42 +116,6 @@ static int dyn_fsync_notify_sys(struct notifier_block *this, unsigned long code,
 	return NOTIFY_DONE;
 }
 
-#ifdef CONFIG_LCD_NOTIF
-static int lcd_notifier_callback(struct notifier_block *this,
-								unsigned long event, void *data)
-{
-	switch (event) 
-	{
-		case LCD_EVENT_OFF_START:
-			mutex_lock(&fsync_mutex);
-			
-			suspend_active = false;
-
-			if (dyn_fsync_active) 
-			{
-				dyn_fsync_force_flush();
-			}
-			
-			mutex_unlock(&fsync_mutex);
-	        pr_warn("dynamic fsync: damn son, I'M SUSPENDED-LCD#####");
-			break;
-			
-		case LCD_EVENT_ON_END:
-			mutex_lock(&fsync_mutex);
-			suspend_active = true;
-			mutex_unlock(&fsync_mutex);
-	        pr_warn("dynamic fsync: damn son, I'M ACTIVE-LCD#####");
-			break;
-			
-		default:
-			break;
-	}
-
-	return 0;
-}
-#endif
-
-#ifdef CONFIG_STATE_NOTIFIER
 static int state_notifier_callback(struct notifier_block *this,
 				unsigned long event, void *data)
 {
@@ -191,7 +145,7 @@ static int state_notifier_callback(struct notifier_block *this,
 
 	return NOTIFY_OK;
 }
-#endif
+
 
 // Module structures
 
@@ -261,24 +215,6 @@ static int dyn_fsync_init(void)
 		kobject_put(dyn_fsync_kobj);
 	}
 
-#ifdef CONFIG_LCD_NOTIF
-	lcd_notif.notifier_call = lcd_notifier_callback;
-	if (lcd_register_client(&lcd_notif) != 0) 
-	{
-		pr_err("%s: Failed to register lcd callback\n", __func__);
-
-		unregister_reboot_notifier(&dyn_fsync_notifier);
-
-		atomic_notifier_chain_unregister(&panic_notifier_list,
-			&dyn_fsync_panic_block);
-
-		if (dyn_fsync_kobj != NULL)
-			kobject_put(dyn_fsync_kobj);
-
-		return -EFAULT;
-	}
-#endif
-#ifdef CONFIG_STATE_NOTIFIER
 	notif.notifier_call = state_notifier_callback;
 	if (state_register_client(&notif))
 	{
@@ -294,7 +230,6 @@ static int dyn_fsync_init(void)
 
 		return -EFAULT;
 	}
-#endif
 
 	pr_info("%s dynamic fsync initialisation complete\n", __FUNCTION__);
 
@@ -311,13 +246,7 @@ static void dyn_fsync_exit(void)
 
 	if (dyn_fsync_kobj != NULL)
 		kobject_put(dyn_fsync_kobj);
-
-#ifdef CONFIG_LCD_NOTIF
-	lcd_unregister_client(&lcd_notif);
-#endif
-#ifdef CONFIG_STATE_NOTIFIER
 	state_unregister_client(&notif);
-#endif		
 
 	pr_info("%s dynamic fsync unregistration complete\n", __FUNCTION__);
 }
