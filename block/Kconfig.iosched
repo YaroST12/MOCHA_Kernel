@@ -156,7 +156,7 @@ config IOSCHED_SWITCHER
 
 choice
 	prompt "Default I/O scheduler"
-	default DEFAULT_FIOPS
+	default DEFAULT_MAPLE
 	help
 	  Select the I/O scheduler which will be used by default for all
 	  block devices.
@@ -171,10 +171,7 @@ choice
 		bool "Maple"
 
 	config DEFAULT_BFQ
-		bool "BFQ" if IOSCHED_BFQ=y
-
-	config DEFAULT_ZEN
-		bool "ZEN"
+		bool "BFQ"
 
 	config DEFAULT_FIFO
 		bool "FIFO"
@@ -191,17 +188,11 @@ choice
 	config DEFAULT_NOOP
 		bool "No-op"
 
-	config DEFAULT_FIOPS
-		bool "Fiops"
-
 	config DEFAULT_ZEN
 		bool "Zen"
 
 	config DEFAULT_SIO
 		bool "SIO"
-
-	config DEFAULT_FIOPS
-		bool "FIOPS"
 
 endchoice
 
