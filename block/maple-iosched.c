@@ -17,9 +17,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
-#ifdef CONFIG_POWERSUSPEND
-#include <linux/powersuspend.h>
-#endif
+#include <linux/state_notifier.h>
 
 #define MAPLE_IOSCHED_PATCHLEVEL	(8)
 
@@ -30,9 +28,9 @@ static const int sync_read_expire = 100;	/* max time before a read sync is submi
 static const int sync_write_expire = 350;	/* max time before a write sync is submitted. */
 static const int async_read_expire = 200;	/* ditto for read async, these limits are SOFT! */
 static const int async_write_expire = 500;	/* ditto for write async, these limits are SOFT! */
-static const int fifo_batch = 3;
+static const int fifo_batch = 6;
 static const int writes_starved = 1;	/* max times reads can starve a write */
-static const int sleep_latency_multiple = 3;	/* multple for expire time when device is asleep */
+static const int sleep_latency_multiple = 5;	/* multple for expire time when device is asleep */
 
 /* Elevator data */
 struct maple_data {
@@ -47,7 +45,7 @@ struct maple_data {
 	int fifo_expire[2][2];
 	int fifo_batch;
 	int writes_starved;
-  int sleep_latency_multiple;
+    int sleep_latency_multiple;
 };
 
 static inline struct maple_data *
@@ -85,19 +83,19 @@ maple_add_request(struct request_queue *q, struct request *rq)
 	 * Add request to the proper fifo list and set its
 	 * expire time.
 	 */
-#ifdef CONFIG_POWERSUSPEND
+#ifdef CONFIG_STATE_NOTIFIER
    	/* inrease expiration when device is asleep */
    	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
-   	if (!power_suspended && mdata->fifo_expire[sync][dir]) {
+   	if (!state_suspended && mdata->fifo_expire[sync][dir]) {
    		rq_set_fifo_time(rq, jiffies + mdata->fifo_expire[sync][dir]);
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	} else if (power_suspended && fifo_expire_suspended) {
+   	} else if (state_suspended && fifo_expire_suspended) {
    		rq_set_fifo_time(rq, jiffies + fifo_expire_suspended);
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	}
 #else
    	if (mdata->fifo_expire[sync][dir]) {
-   		rq_set_fifo_time(rq, jiffies + mdata->fifo_expire[sync][dir]);
+   		rq_set_fifo_time(rq, jiffies + fifo_expire_suspended);
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	}
 #endif
@@ -223,11 +221,11 @@ maple_dispatch_requests(struct request_queue *q, int force)
 
 	/* Retrieve request */
 	if (!rq) {
-#ifdef CONFIG_POWERSUSPEND
+#ifdef CONFIG_STATE_NOTIFIER
 		/* Treat writes fairly while suspended, otherwise allow them to be starved */
-		if (!power_suspended && mdata->starved >= mdata->writes_starved)
+		if (!state_suspended && mdata->starved >= mdata->writes_starved)
 			data_dir = WRITE;
-		else if (power_suspended && mdata->starved >= 1)
+		else if (state_suspended && mdata->starved >= 1)
 			data_dir = WRITE;
 #else
 		if (mdata->starved >= mdata->writes_starved)
