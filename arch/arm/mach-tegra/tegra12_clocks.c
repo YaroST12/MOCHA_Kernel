@@ -9290,10 +9290,12 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
 }
 
 /* EMC/CPU frequency ratio for power/performance optimization */
-static bool prf_btch = 1;
+static bool prf_btch = 0;
 module_param_named(prf_btch, prf_btch, bool, 0664);
-static bool btr_btch = 1;
-module_param_named(btr_btch, btr_btch, bool, 0664);
+static bool prf_btch_pls = 0;
+module_param_named(prf_btch_pls, prf_btch_pls, bool, 0664);
+static bool bat_btch = 0;
+module_param_named(bat_btch, bat_btch, bool, 0664);
 static bool soft_ctl = 1;
 module_param_named(soft_ctl, soft_ctl, bool, 0664);
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
@@ -9312,23 +9314,23 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 
 	if (cpu_rate > 1530000 && prf_btch)
 		return 924000000;
-	else if (cpu_rate > 1530000)
-		return 600000000;
+	else if (cpu_rate > 1224000 && prf_btch_pls)
+		return 924000000;
 	else if (cpu_rate > 1224000)
 		return 600000000;
-	else if (cpu_rate >= 1224000)
+	else if (cpu_rate = 1224000)
 		return 528000000;
 	else if (cpu_rate >= 828000)
 		return 396000000;
-	else if (cpu_rate >= 312000)
+	else if (cpu_rate > 696000 && bat_btch)
 		return 300000000;
-    if (emc_rate = 300000000 && soft_ctl)
+	else if (cpu_rate >= 312000 && !bat_btch)
+		return 300000000;
+    else if (bat_btch)
+        return 0;
+    else if (emc_rate = 300000000 && soft_ctl  && !bat_btch)
         		udelay(500);
 	    return 0;
-	else if (cpu_rate >= 312000)
-		return 300000000;
-	else
-		return 0;
 }
 
 unsigned long tegra_emc_cpu_limit(unsigned long cpu_rate)
