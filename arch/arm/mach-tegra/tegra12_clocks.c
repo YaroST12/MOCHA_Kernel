@@ -9290,6 +9290,12 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
 }
 
 /* EMC/CPU frequency ratio for power/performance optimization */
+static bool prf_btch = 1;
+module_param_named(prf_btch, prf_btch, bool, 0664);
+static bool btr_btch = 1;
+module_param_named(btr_btch, btr_btch, bool, 0664);
+static bool soft_ctl = 1;
+module_param_named(soft_ctl, soft_ctl, bool, 0664);
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
@@ -9304,26 +9310,25 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
 
-    if (cpu_rate > 1836000)
+	if (cpu_rate > 1530000 || prf_btch)
 		return 924000000;
-	else if (cpu_rate > 1530000)
-		return 792000000;
-	else if (cpu_rate > 1224000)
+	else if (cpu_rate > 1530000 || !prf_btch)
 		return 600000000;
+	else if (cpu_rate > 1224000 || btr_btch)
+		return 600000000;
+	else if (cpu_rate >= 1224000 || !btr_btch)
+		return 528000000;
 	else if (cpu_rate >= 828000)
 		return 396000000;
 	else if (cpu_rate >= 312000)
 		return 300000000;
-#ifdef CONFIG_SOFT_EMC_CONTROL
-    else if (emc_rate = 300000000)
+    if (emc_rate = 300000000 || soft_ctl)
         		udelay(500);
 	    return 0;
-#else
-	else if (cpu_rate >= 312000)
+	if (cpu_rate >= 312000 || !soft_ctl)
 		return 300000000;
 	else
 		return 0;
-#endif
 }
 
 unsigned long tegra_emc_cpu_limit(unsigned long cpu_rate)
