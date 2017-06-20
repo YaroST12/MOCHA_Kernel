@@ -9310,22 +9310,22 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
 
-	if (cpu_rate > 1530000 || prf_btch)
+	if (cpu_rate > 1530000 && prf_btch)
 		return 924000000;
-	else if (cpu_rate > 1530000 || !prf_btch)
+	else if (cpu_rate > 1530000)
 		return 600000000;
-	else if (cpu_rate > 1224000 || btr_btch)
+	else if (cpu_rate > 1224000)
 		return 600000000;
-	else if (cpu_rate >= 1224000 || !btr_btch)
+	else if (cpu_rate >= 1224000)
 		return 528000000;
 	else if (cpu_rate >= 828000)
 		return 396000000;
 	else if (cpu_rate >= 312000)
 		return 300000000;
-    if (emc_rate = 300000000 || soft_ctl)
+    if (emc_rate = 300000000 && soft_ctl)
         		udelay(500);
 	    return 0;
-	if (cpu_rate >= 312000 || !soft_ctl)
+	else if (cpu_rate >= 312000)
 		return 300000000;
 	else
 		return 0;
