@@ -9291,13 +9291,15 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
 
 /* EMC/CPU frequency ratio for power/performance optimization */
 static bool prf_btch = 0;
-module_param_named(prf_btch, prf_btch, bool, 0664);
-static bool prf_btch_pls = 0;
-module_param_named(prf_btch_pls, prf_btch_pls, bool, 0664);
+module_param_named(prf_btch, prf_btch, bool, 0664); /* Performance profile */
+static bool game_pls = 0;
+module_param_named(game_pls, game_pls, bool, 0664); /* Gaming profile */
 static bool bat_btch = 0;
-module_param_named(bat_btch, bat_btch, bool, 0664);
-static bool soft_ctl = 1;
-module_param_named(soft_ctl, soft_ctl, bool, 0664);
+module_param_named(bat_btch, bat_btch, bool, 0664); /* Battery profile */
+static bool emc_manual = 0;
+module_param_named(emc_manual, emc_manual, bool, 0664); /* EMC clock manual control toggler */
+bool emc_rq_rate = 600;
+module_param_named(emc_rq_rate, emc_rq_rate, long, 0664); /* EMC control you want to set in MHz */
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
@@ -9308,27 +9310,37 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		emc_max_rate = clk_round_rate(
 			tegra_get_clock_by_name("emc"), ULONG_MAX);
 
+    if (emc_manual)
+        return emc_rq_rate * 1000000;
+
 	/* Vote on memory bus frequency based on cpu frequency;
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
+// Profiles 1.1
+	if (cpu_rate > 2014000 && prf_btch)
+		return 924000000;
+	else if (cpu_rate > 2014000 && game_pls)
+		return 792000000;
+	else if (cpu_rate > 1632000 && !game_pls && !prf_btch)
+		return 792000000;
+	else if (cpu_rate > 1428000 && game_pls)
+		return 924000000;
+	else if (cpu_rate > 1428000 && prf_btch)
+		return 792000000;
+	else if (cpu_rate > 1224000 && game_pls)
+		return 792000000;
 
-	if (cpu_rate > 1530000 && prf_btch)
-		return 924000000;
-	else if (cpu_rate > 1224000 && prf_btch_pls)
-		return 924000000;
 	else if (cpu_rate > 1224000)
 		return 600000000;
-	else if (cpu_rate = 1224000)
-		return 528000000;
-	else if (cpu_rate >= 828000)
+	else if (cpu_rate > 1044000)
 		return 396000000;
 	else if (cpu_rate > 696000 && bat_btch)
 		return 300000000;
-	else if (cpu_rate >= 312000 && !bat_btch)
+	else if (cpu_rate > 312000)
 		return 300000000;
     else if (bat_btch)
         return 0;
-    else if (emc_rate = 300000000 && soft_ctl  && !bat_btch)
+    else if (emc_rate = 300000000)
         		udelay(500);
 	    return 0;
 }
