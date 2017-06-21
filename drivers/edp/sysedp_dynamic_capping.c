@@ -120,6 +120,10 @@ static void pr_caps(struct freqcap *old, struct freqcap *new,
 			cpu_power, new->cpu, new->gpu, new->emc);
 }
 
+#define GPU_MAX_FREQ 	648000
+unsigned long gpu_max_freq = GPU_MAX_FREQ;
+module_param_named(gpu_max_freq, gpu_max_freq, long, 0664);
+
 static void apply_caps(struct tegra_sysedp_devcap *devcap)
 {
 	struct freqcap new;
@@ -128,7 +132,7 @@ static void apply_caps(struct tegra_sysedp_devcap *devcap)
 
 	core_policy.cpu = get_cpufreq_lim(devcap->cpu_power +
 			cpu_power_balance);
-	core_policy.gpu = devcap->gpufreq;
+	core_policy.gpu = gpu_max_freq;
 	core_policy.emc = devcap->emcfreq;
 
 	new.cpu = forced_caps.cpu ?: core_policy.cpu;
