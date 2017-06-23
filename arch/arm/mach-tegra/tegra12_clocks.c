@@ -9298,7 +9298,8 @@ static bool bat_btch = 0;
 module_param_named(bat_btch, bat_btch, bool, 0664); /* Battery profile */
 static bool emc_manual = 0;
 module_param_named(emc_manual, emc_manual, bool, 0664); /* EMC clock manual control toggler */
-bool emc_rq_rate = 600;
+#define EMC_RQ_RATE	600
+unsigned long emc_rq_rate = EMC_RQ_RATE;
 module_param_named(emc_rq_rate, emc_rq_rate, long, 0664); /* EMC control you want to set in MHz */
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
@@ -9316,25 +9317,28 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	/* Vote on memory bus frequency based on cpu frequency;
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
-// Profiles 1.2
-	if (cpu_rate > 1836000 && prf_btch)
-		return 924000000;
-	else if (cpu_rate > 1836000 && game_pls)
+// Profiles 1.3
+	if (cpu_rate > 2014000 && game_pls)
+		return 600000000;
+	else if (cpu_rate > 1830000 && prf_btch)
+		return 792000000;
+	else if (cpu_rate > 1830000 && game_pls)
 		return 792000000;
 	else if (cpu_rate > 1428000 && game_pls)
 		return 924000000;
-	else if (cpu_rate > 1428000 && prf_btch)
-		return 792000000;
+	else if (cpu_rate > 1224000 && prf_btch)
+		return 924000000;
 	else if (cpu_rate > 1224000 && game_pls)
 		return 792000000;
-
-	else if (cpu_rate >= 1224000)
+	else if (cpu_rate >= 1224000 && !game_pls)
 		return 600000000;
+
 	else if (cpu_rate > 1044000)
 		return 396000000;
+
 	else if (cpu_rate > 696000 && bat_btch)
 		return 300000000;
-	else if (cpu_rate > 204000)
+	else if (cpu_rate > 204000 && !bat_btch)
 		return 300000000;
     else if (bat_btch)
         return 0;
