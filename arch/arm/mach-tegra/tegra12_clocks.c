@@ -9317,7 +9317,9 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	/* Vote on memory bus frequency based on cpu frequency;
 	   cpu rate is in kHz, emc rate is in Hz */
     /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
-// Profiles 1.3
+
+// Profiles 1.4
+
 	if (cpu_rate > 2014000 && game_pls)
 		return 600000000;
 	else if (cpu_rate > 1830000 && prf_btch)
@@ -9328,15 +9330,16 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		return 924000000;
 	else if (cpu_rate > 1224000 && prf_btch)
 		return 924000000;
-	else if (cpu_rate > 1224000 && game_pls)
-		return 792000000;
-	else if (cpu_rate >= 1224000 && !game_pls)
+
+	else if (cpu_rate > 1224000 && bat_btch)
 		return 600000000;
-
-	else if (cpu_rate > 1044000)
+	else if (cpu_rate > 1224000 && !bat_btch)
+		return 792000000;
+	else if (cpu_rate > 1040000 && bat_btch)
+		return 528000000;
+	else if (cpu_rate > 695000 && !bat_btch)
 		return 396000000;
-
-	else if (cpu_rate > 696000 && bat_btch)
+	else if (cpu_rate > 695000 && bat_btch)
 		return 300000000;
 	else if (cpu_rate > 204000 && !bat_btch)
 		return 300000000;
