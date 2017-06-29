@@ -83,7 +83,6 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
-<<<<<<< HEAD
 config CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE
 	bool "intelliactive"
 	select CPU_FREQ_GOV_INTELLIACTIVE
@@ -102,19 +101,9 @@ config CPU_FREQ_DEFAULT_GOV_BLU_ACTIVE
 config CPU_FREQ_DEFAULT_GOV_RELAXED
 	bool "relaxed"
 	select CPU_FREQ_GOV_RELAXED
+	select CPU_FREQ_GOV_INTERACTIVE
 	help
 	  Use the CPUFreq governor 'relaxed' as default. This allows
-	  you to get a full dynamic frequency capable system by simply
-	  loading your cpufreq low-level hardware driver.
-	  Be aware that not all cpufreq drivers support the conservative
-	  governor. If unsure have a look at the help section of the
-	  driver. Fallback governor will be the interactive governor.
-
-config CPU_FREQ_DEFAULT_GOV_CHILL
-	bool "chill"
-	select CPU_FREQ_GOV_CHILL
-	help
-	  Use the CPUFreq governor 'chill' as default. This allows
 	  you to get a full dynamic frequency capable system by simply
 	  loading your cpufreq low-level hardware driver.
 	  Be aware that not all cpufreq drivers support the conservative
@@ -195,7 +184,6 @@ config CPU_FREQ_GOV_INTERACTIVE
 
 	  If in doubt, say N.
 
-<<<<<<< HEAD
 config CPU_FREQ_GOV_INTELLIACTIVE
 	tristate "'intelliactive' cpufreq policy governor"
 	help
@@ -212,16 +200,6 @@ config CPU_FREQ_GOV_INTELLIACTIVE
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
-=======
-config CPU_FREQ_GOV_CHILL
-	tristate "'chill' cpufreq governor"
-	depends on CPU_FREQ
-	select CPU_FREQ_GOV_COMMON
-	default y
-	help
-	  'chill' - similar to 'conservative', but optimized for devices
-	  that go into suspended or display off states often.
->>>>>>> 4f89aff... cpufreq: Add Chill cpu gov
 
 config CPU_FREQ_GOV_RELAXED
 	tristate "'relaxed' cpufreq governor"
