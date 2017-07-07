@@ -9326,11 +9326,11 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		return 792000000;
 	else if (cpu_rate > 1428000 && game_pls)
 		return 924000000;
+
+	else if (cpu_rate > 1428000 && !bat_btch)
+		return 792000000;
 	else if (cpu_rate >= 1224000 && prf_btch)
 		return 924000000;
-
-	else if (cpu_rate > 1224000 && !bat_btch)
-		return 792000000;
 	else if (cpu_rate > 1224000 && bat_btch)
 		return 600000000;
 	else if (cpu_rate > 1044000 && !bat_btch)
