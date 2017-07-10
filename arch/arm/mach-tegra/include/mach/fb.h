@@ -27,6 +27,8 @@ struct tegra_dc;
 struct tegra_fb_data;
 struct resource;
 
+int tegra_fb_get_mode(struct tegra_dc *dc);
+int tegra_fb_set_mode(struct tegra_dc *dc, int fps);
 struct tegra_fb_info {
 	struct tegra_dc_win     win;
 	struct platform_device  *ndev;
