@@ -28,8 +28,8 @@
 
 #include <linux/spinlock.h>
 #include <linux/preempt.h>
-#include <asm/processor.h>
-#include <asm/relaxed.h>
+#include <asm-generic/processor.h>
+#include <asm-generic/relaxed.h>
 
 /*
  * Version using sequence counter only.
