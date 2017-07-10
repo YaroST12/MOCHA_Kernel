@@ -28,6 +28,7 @@
 #include <linux/leds.h>
 #include <linux/ioport.h>
 #include <linux/state_notifier.h>
+#include <linux/display_state.h>
 #include <linux/lcd_notify.h>
 #include <generated/mach-types.h>
 #include "board.h"
@@ -49,6 +50,13 @@ static struct platform_device *disp_device;
 static struct regulator *avdd_lcd_vsp_5v5;
 static struct regulator *avdd_lcd_vsn_5v5;
 static struct regulator *dvdd_lcd_1v8;
+bool display_on = true;
+
+bool is_display_on(void)
+{
+	return display_on;
+}
+
 
 static u8 __maybe_unused test_01[] = {0x6A, 0x00};
 static u8 __maybe_unused test_02[] = {0xF0, 0x55, 0xAA, 0x52, 0x08, 0x00};
@@ -172,6 +180,7 @@ static int dsi_s_wqxga_7_9_enable(struct device *dev)
 {
 	int err = 0;
  		    state_resume();
+        	display_on = true;
             lcd_notifier_call_chain(LCD_EVENT_ON_START, NULL);
 
 	struct tegra_dc_out *mocha_disp_out =
@@ -243,6 +252,7 @@ fail:
 static int dsi_s_wqxga_7_9_disable(void)
 {
      		state_suspend();
+        	display_on = false;
             lcd_notifier_call_chain(LCD_EVENT_OFF_START, NULL);
 	pr_info("panel: %s\n", __func__);
 	gpio_set_value(dsi_s_wqxga_7_9_pdata.dsi_panel_rst_gpio, 0);
