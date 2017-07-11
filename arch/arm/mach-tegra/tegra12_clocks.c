@@ -31,6 +31,7 @@
 #include <linux/platform_device.h>
 #include <linux/tegra-soc.h>
 #include <linux/tegra-fuse.h>
+#include <linux/state_notifier.h>
 
 #include <asm/clkdev.h>
 
@@ -9290,6 +9291,11 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
 }
 
 /* EMC/CPU frequency ratio for power/performance optimization */
+/* Vote on memory bus frequency based on cpu frequency;
+    cpu rate is in kHz, emc rate is in Hz */
+/* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
+
+// Profiles 1.6
 static bool prf_btch = 0;
 module_param_named(prf_btch, prf_btch, bool, 0664); /* Performance profile */
 static bool game_pls = 0;
@@ -9314,13 +9320,7 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
     if (emc_manual)
         return emc_rq_rate * 1000000;
 
-	/* Vote on memory bus frequency based on cpu frequency;
-	   cpu rate is in kHz, emc rate is in Hz */
-    /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
-
-// Profiles 1.5
-
-	if (cpu_rate >= 2014500 && game_pls)
+	else if (cpu_rate >= 2014500 && game_pls)
 		return 600000000;
 	else if (cpu_rate > 1836000 && game_pls)
 		return 792000000;
@@ -9337,6 +9337,8 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		return 600000000;
 	else if (cpu_rate > 1044000 && bat_btch)
 		return 528000000;
+    else if (state_suspended = true && cpu_rate > 1044000)
+        return 300000000;
 	else if (cpu_rate > 696000 && !bat_btch)
 		return 396000000;
 	else if (cpu_rate > 696000 && bat_btch)
@@ -9344,6 +9346,8 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	else if (cpu_rate > 204000 && !bat_btch)
 		return 300000000;
     else if (bat_btch)
+        return 0;
+    else if (state_suspended = true && cpu_rate < 312000)
         return 0;
     else if (emc_rate = 300000000 && !bat_btch)
         		udelay(700);
