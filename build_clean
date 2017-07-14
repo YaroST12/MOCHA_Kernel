@@ -4,6 +4,6 @@ export KBUILD_BUILD_USER="Yaro330"
 make clean
 make mrproper
 export ARCH=arm
-make tegra12_android_defconfig
+make f1xy_defconfig
 make -j16 ARCH=arm CROSS_COMPILE=/home/$USER/build/mocha/arm-eabi-6.x/bin/arm-eabi- zImage
 cp $KERNEL_DIR/arch/arm/boot/zImage $KERNEL_DIR/build/zImage
