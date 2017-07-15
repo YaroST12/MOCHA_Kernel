@@ -22,8 +22,6 @@
 #include <linux/kernel.h>
 #include <linux/export.h>
 #include <linux/slab.h>
-#include <linux/vmalloc.h>
-#include <linux/mm.h>
 #include <linux/err.h>
 #include <linux/log2.h>
 #include <linux/uaccess.h>
@@ -37,14 +35,9 @@ static inline unsigned int kfifo_unused(struct __kfifo *fifo)
 	return (fifo->mask + 1) - (fifo->in - fifo->out);
 }
 
-/*
- * internal helper to aid __kfifo_alloc and __kfifo_valloc
- */
-static int __kfifo_kvalloc(struct __kfifo *fifo, unsigned int size,
-		size_t esize, gfp_t gfp_mask, bool physical)
+int __kfifo_alloc(struct __kfifo *fifo, unsigned int size,
+		size_t esize, gfp_t gfp_mask)
 {
-	size_t sz;
-
 	/*
 	 * round down to the next power of 2, since our 'let the indices
 	 * wrap' technique works only in this case.
@@ -61,11 +54,7 @@ static int __kfifo_kvalloc(struct __kfifo *fifo, unsigned int size,
 		return -EINVAL;
 	}
 
-	sz = size * esize;
-	if (physical)
-		fifo->data = kmalloc(sz, gfp_mask);
-	else
-		fifo->data = vmalloc(sz);
+	fifo->data = kmalloc(size * esize, gfp_mask);
 
 	if (!fifo->data) {
 		fifo->mask = 0;
@@ -75,26 +64,11 @@ static int __kfifo_kvalloc(struct __kfifo *fifo, unsigned int size,
 
 	return 0;
 }
-
-int __kfifo_alloc(struct __kfifo *fifo, unsigned int size,
-		size_t esize, gfp_t gfp_mask)
-{
-	return __kfifo_kvalloc(fifo, size, esize, gfp_mask,
-		true);
-}
 EXPORT_SYMBOL(__kfifo_alloc);
-
-int __kfifo_valloc(struct __kfifo *fifo, unsigned int size,
-		size_t esize)
-{
-	return __kfifo_kvalloc(fifo, size, esize, GFP_KERNEL | __GFP_NOWARN,
-		false);
-}
-EXPORT_SYMBOL(__kfifo_valloc);
 
 void __kfifo_free(struct __kfifo *fifo)
 {
-	kvfree(fifo->data);
+	kfree(fifo->data);
 	fifo->in = 0;
 	fifo->out = 0;
 	fifo->esize = 0;
