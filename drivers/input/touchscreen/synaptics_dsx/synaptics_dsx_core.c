@@ -61,10 +61,10 @@
 #define RPT_WY (1 << 7)
 #define RPT_DEFAULT (RPT_TYPE | RPT_X_LSB | RPT_X_MSB | RPT_Y_LSB | RPT_Y_MSB)
 
-#define EXP_FN_WORK_DELAY_MS 100 /* ms */
+#define EXP_FN_WORK_DELAY_MS 300 /* ms */
 #define MAX_F11_TOUCH_WIDTH 15
 
-#define CHECK_STATUS_TIMEOUT_MS 10
+#define CHECK_STATUS_TIMEOUT_MS 30
 
 #define F01_STD_QUERY_LEN 21
 #define F01_BUID_ID_OFFSET 18
@@ -553,39 +553,6 @@ static ssize_t synaptics_rmi4_suspend_store(struct device *dev,
 }
 
 static int synaptics_rmi4_proc_init()
-
-{
-	int ret = 0;
-	char *buf, *path = NULL;
-	char *key_disabler_sysfs_node = NULL;
-	struct proc_dir_entry *proc_entry_tp = NULL;
-	struct proc_dir_entry *proc_symlink_tmp  = NULL;
-
-	buf = kzalloc(PATH_MAX, GFP_KERNEL);
-	if (buf)
-		path = "/sys/devices/platform/tegra12-i2c.3/i2c-3/3-0020/input/input3/0dbutton";
-
-	proc_entry_tp = proc_mkdir("touchpanel", NULL);
-	if (proc_entry_tp == NULL) {
-		ret = -ENOMEM;
-		pr_err("%s: Couldn't create touchpanel\n", __func__);
-	}
-
-	key_disabler_sysfs_node = kzalloc(PATH_MAX, GFP_KERNEL);
-	proc_symlink_tmp = proc_symlink("capacitive_keys_enable",
-			proc_entry_tp, path);
-	if (proc_symlink_tmp == NULL) {
-		ret = -ENOMEM;
-		pr_err("%s: Couldn't create capacitive_keys_enable symlink\n", __func__);
-	}
-
-	kfree(buf);
-
-	return ret;
-}
-
-static ssize_t synaptics_rmi4_wake_gesture_show(struct device *dev,
-		struct device_attribute *attr)
 {
 	int ret = 0;
 	char *buf, *path = NULL;
@@ -2928,6 +2895,8 @@ static int synaptics_rmi4_probe(struct platform_device *pdev)
 		INIT_LIST_HEAD(&exp_data.list);
 		exp_data.initialized = true;
 	}
+
+    synaptics_rmi4_proc_init();
 
 	exp_data.workqueue = create_singlethread_workqueue("dsx_exp_workqueue");
 	INIT_DELAYED_WORK(&exp_data.work, synaptics_rmi4_exp_fn_work);
