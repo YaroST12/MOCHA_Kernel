@@ -60,10 +60,10 @@
 #define RPT_WY (1 << 7)
 #define RPT_DEFAULT (RPT_TYPE | RPT_X_LSB | RPT_X_MSB | RPT_Y_LSB | RPT_Y_MSB)
 
-#define EXP_FN_WORK_DELAY_MS 1000 /* ms */
+#define EXP_FN_WORK_DELAY_MS 100 /* ms */
 #define MAX_F11_TOUCH_WIDTH 15
 
-#define CHECK_STATUS_TIMEOUT_MS 100
+#define CHECK_STATUS_TIMEOUT_MS 10
 
 #define F01_STD_QUERY_LEN 21
 #define F01_BUID_ID_OFFSET 18
@@ -2708,8 +2708,8 @@ static int synaptics_rmi4_input_enable(struct input_dev *in_dev);
 static int synaptics_rmi4_input_disable(struct input_dev *in_dev);
 
 #define RMI4_INPUT_EVENT_START           0
-#define RMI4_INPUT_EVENT_SENSITIVE_MODE_OFF              0
-#define RMI4_INPUT_EVENT_SENSITIVE_MODE_ON               1
+#define RMI4_INPUT_EVENT_SENSITIVE_MODE_OFF              6
+#define RMI4_INPUT_EVENT_SENSITIVE_MODE_ON               0
 #define RMI4_INPUT_EVENT_STYLUS_MODE_OFF         2
 #define RMI4_INPUT_EVENT_STYLUS_MODE_ON          3
 #define RMI4_INPUT_EVENT_WAKUP_MODE_OFF          4
