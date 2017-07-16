@@ -585,7 +585,7 @@ static int synaptics_rmi4_proc_init()
 }
 
 static ssize_t synaptics_rmi4_wake_gesture_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+		struct device_attribute *attr)
 {
 	int ret = 0;
 	char *buf, *path = NULL;
