@@ -1881,6 +1881,62 @@ int gk20a_fifo_wait_engine_idle(struct gk20a *g)
 	return ret;
 }
 
+static void gk20a_fifo_trigger_mmu_fault(struct gk20a *g,
+		unsigned long engine_ids)
+{
+	unsigned long end_jiffies = jiffies +
+		msecs_to_jiffies(gk20a_get_gr_idle_timeout(g));
+	unsigned long delay = GR_IDLE_CHECK_DEFAULT;
+	unsigned long engine_id;
+	int ret;
+
+	/*
+	 * sched error prevents recovery, and ctxsw error will retrigger
+	 * every 100ms. Disable the sched error to allow recovery.
+	 */
+	gk20a_writel(g, fifo_intr_en_0_r(),
+		     0x7FFFFFFF & ~fifo_intr_en_0_sched_error_m());
+	gk20a_writel(g, fifo_intr_0_r(),
+			fifo_intr_0_sched_error_reset_f());
+
+	/* trigger faults for all bad engines */
+	for_each_set_bit(engine_id, &engine_ids, 32) {
+		if (engine_id > g->fifo.max_engines) {
+			WARN_ON(true);
+			break;
+		}
+
+		gk20a_writel(g, fifo_trigger_mmu_fault_r(engine_id),
+			     fifo_trigger_mmu_fault_id_f(
+			     gk20a_engine_id_to_mmu_id(engine_id)) |
+			     fifo_trigger_mmu_fault_enable_f(1));
+	}
+
+	/* Wait for MMU fault to trigger */
+	ret = -EBUSY;
+	do {
+		if (gk20a_readl(g, fifo_intr_0_r()) &
+				fifo_intr_0_mmu_fault_pending_f()) {
+			ret = 0;
+			break;
+		}
+
+		usleep_range(delay, delay * 2);
+		delay = min_t(u32, delay << 1, GR_IDLE_CHECK_MAX);
+	} while (time_before(jiffies, end_jiffies) ||
+			!tegra_platform_is_silicon());
+
+	if (ret)
+		gk20a_err(dev_from_gk20a(g), "mmu fault timeout");
+
+	/* release mmu fault trigger */
+	for_each_set_bit(engine_id, &engine_ids, 32)
+		gk20a_writel(g, fifo_trigger_mmu_fault_r(engine_id), 0);
+
+	/* Re-enable sched error */
+	gk20a_writel(g, fifo_intr_en_0_r(), 0x7FFFFFFF);
+}
+
 void gk20a_init_fifo(struct gpu_ops *gops)
 {
 	gk20a_init_channel(gops);
