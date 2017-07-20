@@ -57,7 +57,6 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
 obj-$(CONFIG_VMWARE_VMCI)	+= vmw_vmci/
 obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
 obj-$(CONFIG_SRAM)		+= sram.o
-<<<<<<< HEAD
 obj-$(CONFIG_SENSORS_NCT1008)	+= nct1008.o
 obj-$(CONFIG_BCM4329_RFKILL)	+= bcm4329_rfkill.o
 CFLAGS_tegra-cryptodev.o	 = -Werror

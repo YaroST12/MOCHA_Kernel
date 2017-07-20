@@ -546,7 +546,6 @@ config SRAM
 	  the genalloc API. It is supposed to be used for small on-chip SRAM
 	  areas found on many SoCs.
 
-<<<<<<< HEAD
 config BCM4329_RFKILL
 	bool "Enable BCM4329 RFKILL driver"
 	default n
