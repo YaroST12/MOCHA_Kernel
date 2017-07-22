@@ -135,7 +135,7 @@ static unsigned int up_threshold_any_cpu_load = 65;
 static unsigned int sync_freq = 1044000;
 static unsigned int up_threshold_any_cpu_freq = 1044000;
 
-static int two_phase_freq_array[NR_CPUS] = {[0 ... NR_CPUS-3] = 204000};
+static int two_phase_freq_array[NR_CPUS] = {[0 ... NR_CPUS-1] = 204000} ;
 
 static int cpufreq_governor_intelliactive(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -417,9 +417,9 @@ static void cpufreq_interactive_timer(unsigned long data)
 				new_freq = hispeed_freq;
 		} else {
 			new_freq = choose_freq(pcpu, loadadjfreq);
-		    if (new_freq > hispeed_freq &&
-				    pcpu->target_freq < hispeed_freq)
-			    new_freq = hispeed_freq;
+
+			if (new_freq < hispeed_freq)
+				new_freq = hispeed_freq;
 		}
 	} else {
 		new_freq = choose_freq(pcpu, loadadjfreq);
@@ -827,10 +827,10 @@ static ssize_t show_target_loads(
 	spin_lock_irqsave(&target_loads_lock, flags);
 
 	for (i = 0; i < ntarget_loads; i++)
-		ret += sprintf(buf +ret, "%u%s", target_loads[i],
+		ret += sprintf(buf + ret, "%u%s", target_loads[i],
 			       i & 0x1 ? ":" : " ");
 
-    sprintf(buf + ret - 1, "\n");
+	ret += sprintf(buf + --ret, "\n");
 	spin_unlock_irqrestore(&target_loads_lock, flags);
 	return ret;
 }
@@ -873,7 +873,7 @@ static ssize_t show_above_hispeed_delay(
 		ret += sprintf(buf + ret, "%u%s", above_hispeed_delay[i],
 			       i & 0x1 ? ":" : " ");
 
-	sprintf(buf + ret - 1, "\n");
+	ret += sprintf(buf + --ret, "\n");
 	spin_unlock_irqrestore(&above_hispeed_delay_lock, flags);
 	return ret;
 }
