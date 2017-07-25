@@ -17,7 +17,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
-#include <linux/state_notifier.h>
+#include <linux/display_state.h>
 
 #define MAPLE_IOSCHED_PATCHLEVEL	(8)
 
@@ -31,7 +31,6 @@ static const int async_write_expire = 500;	/* ditto for write async, these limit
 static const int fifo_batch = 8;		/* # of sequential requests treated as one by the above parameters. */
 static const int writes_starved = 5;		/* max times reads can starve a write */
 static const int sleep_latency_multiple = 10;	/* multple for expire time when device is asleep */
-static bool suspended = false;
 
 /* Elevator data */
 struct maple_data {
@@ -79,6 +78,7 @@ maple_add_request(struct request_queue *q, struct request *rq)
 	struct maple_data *mdata = maple_get_data(q);
 	const int sync = rq_is_sync(rq);
 	const int dir = rq_data_dir(rq);
+	const bool display_on = true;
 
 	/*
 	 * Add request to the proper fifo list and set its
@@ -87,10 +87,10 @@ maple_add_request(struct request_queue *q, struct request *rq)
 
    	/* inrease expiration when device is asleep */
    	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
-   	if (suspended = false && mdata->fifo_expire[sync][dir]) {
+   	if (display_on && mdata->fifo_expire[sync][dir]) {
    		rq_set_fifo_time(rq, jiffies + mdata->fifo_expire[sync][dir]);
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	} else if (suspended = true && fifo_expire_suspended) {
+   	} else if (!display_on && fifo_expire_suspended) {
    		rq_set_fifo_time(rq, jiffies + fifo_expire_suspended);
    		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
    	}
@@ -200,32 +200,13 @@ maple_dispatch_request(struct maple_data *mdata, struct request *rq)
 	}
 }
 
-static int state_notifier_callback(struct notifier_block *this,
-				unsigned long event, void *data)
-{
-	if (!suspended)
-		return NOTIFY_OK;
-
-	switch (event) {
-		case STATE_NOTIFIER_ACTIVE:
-			suspended = false;
-			break;
-		case STATE_NOTIFIER_SUSPEND:
-			suspended = true;
-			break;
-		default:
-			break;
-	}
-
-	return NOTIFY_OK;
-}
-
 static int
 maple_dispatch_requests(struct request_queue *q, int force)
 {
 	struct maple_data *mdata = maple_get_data(q);
 	struct request *rq = NULL;
 	int data_dir = READ;
+	const bool display_on = true;
 
 	/*
 	 * Retrieve any expired request after a batch of
@@ -237,9 +218,9 @@ maple_dispatch_requests(struct request_queue *q, int force)
 	/* Retrieve request */
 	if (!rq) {
 		/* Treat writes fairly while suspended, otherwise allow them to be starved */
-		if (suspended = false && mdata->starved >= mdata->writes_starved)
+		if (display_on && mdata->starved >= mdata->writes_starved)
 			data_dir = WRITE;
-		else if (suspended = true && mdata->starved >= 1)
+		else if (!display_on && mdata->starved >= 1)
 			data_dir = WRITE;
 
 		rq = maple_choose_request(mdata, data_dir);
