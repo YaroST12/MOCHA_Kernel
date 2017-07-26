@@ -25,12 +25,6 @@ static bool enable_wlan_ctrl_wake_ws = true;
 module_param(enable_wlan_ctrl_wake_ws, bool, 0644);
 static bool enable_wlan_wake_ws = true;
 module_param(enable_wlan_wake_ws, bool, 0644);
-static bool enable_bluedroid_timer_ws = true;
-module_param(enable_bluedroid_timer_ws, bool, 0644);
-static bool enable_timerfd_ws = true;
-module_param(enable_timerfd_ws, bool, 0644);
-static bool enable_netlink_ws = true;
-module_param(enable_netlink_ws, bool, 0644);
 
 #include "power.h"
 
@@ -438,13 +432,7 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 			(!enable_wlan_ctrl_wake_ws &&
 				!strncmp(ws->name, "wlan_ctrl_wake", wslen)) ||
 			(!enable_wlan_wake_ws &&
-				!strncmp(ws->name, "wlan_wake", wslen)) ||
-			(!enable_bluedroid_timer_ws &&
-				!strncmp(ws->name, "bluedroid_timer", wslen)) ||
-			(!enable_timerfd_ws &&
-				!strncmp(ws->name, "[timerfd]", wslen)) ||
-			(!enable_netlink_ws &&
-				!strncmp(ws->name, "NETLINK", wslen))) {
+				!strncmp(ws->name, "wlan_wake", wslen))) {
 			if (ws->active) {
 				wakeup_source_deactivate(ws);
 				pr_info("forcefully deactivate wakeup source: %s\n",
