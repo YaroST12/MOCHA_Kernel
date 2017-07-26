@@ -241,8 +241,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers -Wno-unused-variable -Wno-unused-value
-HOSTCXXFLAGS = -O2 -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers -Wno-unused-variable -Wno-unused-value
+HOSTCXXFLAGS = -Ofast -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -pipe
 
 
 
@@ -326,14 +326,14 @@ include $(srctree)/scripts/Kbuild.include
 
 # Make variables (CC, etc...)
 
-OPTIMIZEFLAGS   = -O2 -mtune=cortex-a15 -mfloat-abi=softfp
+OPTIMIZEFLAGS   = -Ofast -mtune=cortex-a15 -mfloat-abi=softfp
 OPTIMIZEFLAGS 	+= -fmodulo-sched -fmodulo-sched-allow-regmoves
 OPTIMIZEFLAGS 	+= -ftree-loop-distribution -fivopts
 OPTIMIZEFLAGS 	+= -fira-algorithm=priority
 
 AS		= $(CROSS_COMPILE)as $(CROSS_COMPILE)gcc
 LD		= $(CROSS_COMPILE)ld
-LD		+= -O2 --strip-debug --hash-style=gnu -flto -Bsymbolic-functions
+LD		+= -Ofast --strip-debug --hash-style=gnu -flto -Bsymbolic-functions
 CC		= $(CCACHE) $(CROSS_COMPILE)gcc $(OPTIMIZEFLAGS)
 CPP		= $(CC) -E -fvisibility-inlines-hidden
 AR		= $(CROSS_COMPILE)ar
@@ -357,9 +357,9 @@ CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
-ARM_ARCH_OPT := -O2 -mtune=cortex-a15 -mfloat-abi=softfp
+ARM_ARCH_OPT := -Ofast -mtune=cortex-a15 -mfloat-abi=softfp
 GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT)) \
- -g0 -O2 -pipe \
+ -g0 -Ofast -pipe \
  -DNDEBUG \
  -fmodulo-sched \
  -fmodulo-sched-allow-regmoves \
