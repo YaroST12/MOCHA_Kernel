@@ -153,8 +153,9 @@ void __init shield_sysedp_batmon_init(void)
 }
 
 static struct tegra_sysedp_platform_data shield_sysedp_dynamic_capping_platdata = {
-	.core_gain = 100,
+	.core_gain = 125,
 	.init_req_watts = 20000,
+    .pthrot_ratio = 75,
 };
 
 static struct platform_device shield_sysedp_dynamic_capping = {
