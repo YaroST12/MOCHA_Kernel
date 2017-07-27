@@ -68,7 +68,7 @@ static void tripndroid_add_request(struct request_queue *q, struct request *rq)
 	const int sync = rq_is_sync(rq);
 	const int data_dir = rq_data_dir(rq);
 
-	rq->fifo_time = jiffies + td->fifo_expire[sync][data_dir]));
+	rq->fifo_time = jiffies + td->fifo_expire[sync][data_dir];
 	list_add(&rq->queuelist, &td->fifo_list[sync][data_dir]);
 }
 
