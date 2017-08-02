@@ -99,6 +99,11 @@ static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 #define MIN_BUSY_TIME (50 * USEC_PER_MSEC)
 
 /*
+* Threshold load to start scaling, if load is below threshold - cpu will stay in idle
+*/
+#define DOWN_LOW_LOAD_THRESHOLD 15
+
+/*
  * Wait this long before raising speed above hispeed, by default a single
  * timer interval.
  */
@@ -421,6 +426,8 @@ static void cpufreq_interactive_timer(unsigned long data)
 			if (new_freq < hispeed_freq)
 				new_freq = hispeed_freq;
 		}
+	} else if (cpu_load <= DOWN_LOW_LOAD_THRESHOLD) {
+		new_freq = pcpu->policy->cpuinfo.min_freq;
 	} else {
 		new_freq = choose_freq(pcpu, loadadjfreq);
 		if (new_freq > hispeed_freq &&
