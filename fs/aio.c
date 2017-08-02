@@ -1177,6 +1177,8 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 		return -EINVAL;
 	}
 
+	blk_start_plug(&plug);
+
 #ifndef CONFIG_AIO_SSD_ONLY
 	blk_start_plug(&plug);
 #endif
