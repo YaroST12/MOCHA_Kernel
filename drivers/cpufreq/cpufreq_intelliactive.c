@@ -53,9 +53,7 @@ struct cpufreq_interactive_cpuinfo {
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
 	int governor_enabled;
-	int prev_load;
-	unsigned int two_phase_freq;
-};
+	int prev_load;};
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
 
@@ -101,7 +99,8 @@ static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 /*
 * Threshold load to start scaling, if load is below threshold - cpu will stay in idle
 */
-#define DOWN_LOW_LOAD_THRESHOLD 15
+#define NO_SCALING_LOAD 15
+static unsigned int no_scaling_load = NO_SCALING_LOAD;
 
 /*
  * Wait this long before raising speed above hispeed, by default a single
@@ -139,8 +138,6 @@ static bool io_is_busy = 1;
 static unsigned int up_threshold_any_cpu_load = 65;
 static unsigned int sync_freq = 1044000;
 static unsigned int up_threshold_any_cpu_freq = 1044000;
-
-static int two_phase_freq_array[NR_CPUS] = {[0 ... NR_CPUS-1] = 204000};
 
 static int cpufreq_governor_intelliactive(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -375,8 +372,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 	int i, max_load;
 	unsigned int max_freq;
 	struct cpufreq_interactive_cpuinfo *picpu;
-	static unsigned int phase = 0;
-	static unsigned int counter = 0;
 	unsigned int nr_cpus;
 
 	if (!down_read_trylock(&pcpu->enable_sem))
@@ -402,37 +397,15 @@ static void cpufreq_interactive_timer(unsigned long data)
 	pcpu->prev_load = cpu_load;
 	boosted = boost_val || now < boostpulse_endtime;
 
-	if (counter < 5) {
-		counter++;
-		if (counter > 2) {
-			phase = 1;
-		}
-	}
-
 	if (cpu_load >= go_hispeed_load || boosted) {
-		if (pcpu->target_freq < hispeed_freq) {
-			nr_cpus = num_online_cpus();
-
-			pcpu->two_phase_freq = two_phase_freq_array[nr_cpus-1];
-			if (pcpu->two_phase_freq < pcpu->policy->cur)
-				phase = 1;
-			if (pcpu->two_phase_freq != 0 && phase == 0) {
-				new_freq = pcpu->two_phase_freq;
-			} else
-				new_freq = hispeed_freq;
-		} else {
-			new_freq = choose_freq(pcpu, loadadjfreq);
-
-			if (new_freq < hispeed_freq)
-				new_freq = hispeed_freq;
-		}
-	} else if (cpu_load <= DOWN_LOW_LOAD_THRESHOLD) {
-		new_freq = pcpu->policy->cpuinfo.min_freq;
-	} else {
 		new_freq = choose_freq(pcpu, loadadjfreq);
 		if (new_freq > hispeed_freq &&
 				pcpu->target_freq < hispeed_freq)
 			new_freq = hispeed_freq;
+	} else if (cpu_load <= no_scaling_load) {
+		new_freq = pcpu->policy->cpuinfo.min_freq;
+	} else {
+		new_freq = choose_freq(pcpu, loadadjfreq);
 
 		if (sync_freq && new_freq < sync_freq) {
 
@@ -453,13 +426,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 			if (max_freq > up_threshold_any_cpu_freq &&
 				max_load >= up_threshold_any_cpu_load)
 				new_freq = sync_freq;
-		}
-	}
-
-	if (counter > 0) {
-		counter--;
-		if (counter == 0) {
-			phase = 0;
 		}
 	}
 
@@ -788,45 +754,6 @@ err_kfree:
 err:
 	return ERR_PTR(err);
 }
-
-static ssize_t show_two_phase_freq
-(struct kobject *kobj, struct attribute *attr, char *buf)
-{
-	int i = 0 ;
-	int shift = 0 ;
-	char *buf_pos = buf;
-	for ( i = 0 ; i < NR_CPUS; i++) {
-		shift = sprintf(buf_pos,"%d,",two_phase_freq_array[i]);
-		buf_pos += shift;
-	}
-	*(buf_pos-1) = '\0';
-	return strlen(buf);
-}
-
-static ssize_t store_two_phase_freq(struct kobject *a, struct attribute *b,
-		const char *buf, size_t count)
-{
-
-	int ret = 0;
-	if (NR_CPUS == 1)
-		ret = sscanf(buf,"%u",&two_phase_freq_array[0]);
-	else if (NR_CPUS == 2)
-		ret = sscanf(buf,"%u,%u",&two_phase_freq_array[0],
-				&two_phase_freq_array[1]);
-	else if (NR_CPUS == 4)
-		ret = sscanf(buf, "%u,%u,%u,%u", &two_phase_freq_array[0],
-				&two_phase_freq_array[1],
-				&two_phase_freq_array[2],
-				&two_phase_freq_array[3]);
-	if (ret < NR_CPUS)
-		return -EINVAL;
-
-	return count;
-}
-
-static struct global_attr two_phase_freq_attr =
-	__ATTR(two_phase_freq, S_IRUGO | S_IWUSR,
-		show_two_phase_freq, store_two_phase_freq);
 
 static ssize_t show_target_loads(
 	struct kobject *kobj, struct attribute *attr, char *buf)
@@ -1187,6 +1114,30 @@ static struct global_attr up_threshold_any_cpu_load_attr =
 		show_up_threshold_any_cpu_load,
 				store_up_threshold_any_cpu_load);
 
+static ssize_t show_no_scaling_load(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%u\n", no_scaling_load);
+}
+
+static ssize_t store_no_scaling_load(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	no_scaling_load = val;
+	return count;
+}
+
+static struct global_attr no_scaling_load_attr =
+		__ATTR(no_scaling_load, 0644,
+		show_no_scaling_load,
+				store_no_scaling_load);
+
 static ssize_t show_up_threshold_any_cpu_freq(struct kobject *kobj,
 			struct attribute *attr, char *buf)
 {
@@ -1225,9 +1176,9 @@ static struct attribute *interactive_attributes[] = {
 	&io_is_busy_attr.attr,
 	&sampling_down_factor_attr.attr,
 	&sync_freq_attr.attr,
+	&no_scaling_load_attr.attr,	
 	&up_threshold_any_cpu_load_attr.attr,
 	&up_threshold_any_cpu_freq_attr.attr,
-	&two_phase_freq_attr.attr,
 	NULL,
 };
 
