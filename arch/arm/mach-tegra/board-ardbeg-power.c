@@ -1296,7 +1296,7 @@ static struct soctherm_therm ardbeg_therm_pop[THERM_SIZE] = {
 			},
 			{
 				.cdev_type = "tegra-heavy",
-				.trip_temp = 94000,
+				.trip_temp = 91000,
 				.trip_type = THERMAL_TRIP_HOT,
 				.upper = THERMAL_NO_LIMIT,
 				.lower = THERMAL_NO_LIMIT,
