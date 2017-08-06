@@ -243,7 +243,6 @@ static int dsi_s_wqxga_7_9_enable(struct device *dev)
 #endif
 
 	return 0;
-    lcd_notifier_call_chain(LCD_EVENT_ON_END, NULL);
 fail:
 	return err;
 
@@ -266,7 +265,6 @@ static int dsi_s_wqxga_7_9_disable(void)
 	if (dvdd_lcd_1v8)
 		regulator_disable(dvdd_lcd_1v8);
 	return 0;
-            lcd_notifier_call_chain(LCD_EVENT_OFF_END, NULL);
 }
 
 static int dsi_s_wqxga_7_9_postsuspend(void)
