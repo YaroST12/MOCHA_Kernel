@@ -99,7 +99,7 @@ static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 /*
 * Threshold load to start scaling, if load is below threshold - cpu will stay in idle
 */
-#define NO_SCALING_LOAD 15
+#define NO_SCALING_LOAD 5
 static unsigned int no_scaling_load = NO_SCALING_LOAD;
 
 /*
