@@ -7437,11 +7437,10 @@ wl_notify_connect_status(struct bcm_cfg80211 *cfg, bcm_struct_cfgdev *cfgdev,
 					}
 				}
 				cfg80211_disconnected(ndev, reason, NULL, 0, GFP_KERNEL);
-				wl_link_down(wl);
-				wl_init_prof(wl, ndev);
+				wl_link_down(cfg);
+				wl_init_prof(cfg, ndev);
 			}
-			else if (wl_get_drv_status(wl, CONNECTING, ndev)) {
-
+			else if (wl_get_drv_status(cfg, CONNECTING, ndev)) {
 				printk("link down, during connecting\n");
 #ifdef ESCAN_RESULT_PATCH
 				if ((memcmp(connect_req_bssid, broad_bssid, ETHER_ADDR_LEN) == 0) ||
