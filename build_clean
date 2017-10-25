@@ -5,5 +5,5 @@ make clean
 make mrproper
 export ARCH=arm
 make f1xy_defconfig
-make -j16 ARCH=arm CROSS_COMPILE=/home/$USER/build/mocha/arm-eabi-6.x/bin/arm-eabi- zImage
+make -j16 ARCH=arm CROSS_COMPILE=/home/$USER/build/mocha/gcc-prebuilts/bin/arm-linaro-linux-androideabi- zImage
 cp $KERNEL_DIR/arch/arm/boot/zImage $KERNEL_DIR/build/zImage
