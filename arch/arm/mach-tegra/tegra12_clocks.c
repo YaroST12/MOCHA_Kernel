@@ -9348,6 +9348,8 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		return 300000000;
 	if (cpu_rate > 204000 && (state_suspended || bat_btch))
 		return 0;
+	
+	return emc_rate;
 }
 
 unsigned long tegra_emc_cpu_limit(unsigned long cpu_rate)
