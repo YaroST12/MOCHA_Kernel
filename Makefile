@@ -241,8 +241,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-strip-mine -floop-block -pipe -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers -Wno-unused-variable -Wno-unused-value
-HOSTCXXFLAGS = -Ofast -fgcse-las -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-strip-mine -floop-block -pipe
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -std=gnu89
+HOSTCXXFLAGS = -O2
 
 
 
@@ -324,17 +324,10 @@ MAKEFLAGS += --include-dir=$(srctree)
 $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
-# Make variables (CC, etc...)
-
-OPTIMIZEFLAGS   = -Ofast -mtune=cortex-a15 -mfloat-abi=softfp
-OPTIMIZEFLAGS 	+= -fmodulo-sched -fmodulo-sched-allow-regmoves
-OPTIMIZEFLAGS 	+= -ftree-loop-distribution -fivopts
-OPTIMIZEFLAGS 	+= -fira-algorithm=priority
-
 AS		= $(CROSS_COMPILE)as $(CROSS_COMPILE)gcc
 LD		= $(CROSS_COMPILE)ld
-LD		+= -Ofast --strip-debug --hash-style=gnu -flto -Bsymbolic-functions
-CC		= $(CCACHE) $(CROSS_COMPILE)gcc $(OPTIMIZEFLAGS)
+LD		+= -O2 --strip-debug --hash-style=gnu -flto -Bsymbolic-functions
+CC		= $(CCACHE) $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E -fvisibility-inlines-hidden
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -356,14 +349,6 @@ LDFLAGS_MODULE  = --strip-debug
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-
-ARM_ARCH_OPT := -Ofast -mtune=cortex-a15 -mfloat-abi=softfp
-GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT)) \
- -g0 -Ofast -pipe \
- -DNDEBUG \
- -fmodulo-sched \
- -fmodulo-sched-allow-regmoves \
- -fivopts
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := \
@@ -389,21 +374,61 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -std=gnu89 \
-		   $(GEN_OPT_FLAGS)
-
+		   -std=gnu89
+		   
 # Thanks gcc!
 KBUILD_CFLAGS   += -Wno-unused-label -Wno-array-bounds -Wno-memset-transposed-args \
 		   -Wno-unused-function -Wno-declaration-after-statement \
 		   -Wno-unused-variable -Wno-parentheses -Wno-maybe-uninitialized \
-		   -Wno-misleading-indentation -Wno-bool-compare -Wno-int-conversion \
-		   -Wno-discarded-qualifiers -Wno-tautological-compare -Wno-incompatible-pointer-types
+		   -Wno-bool-compare -Wno-int-conversion -Wno-format-truncation \
+		   -Wno-discarded-qualifiers -Wno-tautological-compare -Wno-incompatible-pointer-types \
+		   -Wno-int-in-bool-context -Wno-format-overflow
 
-KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS)
-KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS)
+###########################
+# FLASH OPTMIZATION SETUP #
+###########################
+
+# Strip linker
+LDFLAGS		+= --strip-debug -O2
+
+# Optimization flags
+KBUILD_CFLAGS	+= -g0 -DNDEBUG \
+		   -fgraphite \
+		   -fgraphite-identity \
+		   -fivopts \
+		   -floop-block \
+		   -floop-interchange \
+		   -floop-strip-mine \
+		   -fmodulo-sched \
+		   -fmodulo-sched-allow-regmoves \
+		   -ftree-loop-distribution \
+		   -ftree-loop-linear \
+		   -O2 -mtune=cortex-a15 -fno-gcse \
+		   -pipe -fno-pic
+
+# These flags need a special toolchain so split them off
+KBUILD_CFLAGS	+= $(call cc-option,-mlow-precision-recip-sqrt,) \
+		   $(call cc-option,-mpc-relative-literal-loads,)
+
+# Disable all maybe-uninitialized warnings
+KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
+
+# Disable unused-constant-variable warnings
+KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
+
+# Disable format-truncation warnings
+KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
+
+# Needed to unbreak GCC 7.x and above
+KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
+
+KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
+
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
-KBUILD_CFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
+KBUILD_AFLAGS_MODULE  := -DMODULE
+KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
