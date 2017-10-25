@@ -277,7 +277,7 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 {
 	struct tegra_fb_info *tegra_fb = info->par;
 	struct tegra_dc *dc = tegra_fb->win.dc;
-
+	struct tegra_dc_win *win = &tegra_fb->win;
 
 	switch (blank) {
 	case FB_BLANK_UNBLANK:
@@ -288,7 +288,6 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
                 dc->out->flags &= ~TEGRA_DC_OUT_INITIALIZED_MODE;
 
 		tegra_dc_enable(dc);
-			struct tegra_dc_win *win = &tegra_fb->win;
 			tegra_dc_update_windows(&win, 1);
 			tegra_dc_sync_windows(&win, 1);
 			tegra_dc_program_bandwidth(dc, true);
@@ -332,6 +331,7 @@ static int tegra_fb_pan_display(struct fb_var_screeninfo *var,
 				struct fb_info *info)
 {
 	struct tegra_fb_info *tegra_fb = info->par;
+	struct tegra_dc_win *win = &tegra_fb->win;
 	char __iomem *flush_start;
 	char __iomem *flush_end;
 	phys_addr_t    addr;
@@ -368,7 +368,6 @@ static int tegra_fb_pan_display(struct fb_var_screeninfo *var,
 		tegra_fb->win.flags |= TEGRA_WIN_FLAG_FB;
 		tegra_fb->win.virt_addr = info->screen_base;
 
-		struct tegra_dc_win *win = &tegra_fb->win;
 		tegra_dc_update_windows(&win, 1);
 		tegra_dc_sync_windows(&win, 1);
 		tegra_dc_program_bandwidth(win->dc, true);
