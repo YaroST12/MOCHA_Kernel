@@ -9324,35 +9324,30 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 
     if (cpu_rate > 1836000)
 		return 600000000;
-	else if (cpu_rate > 1632000 && game_pls)
+	if (cpu_rate > 1632000 && game_pls)
 		return 792000000;
-	else if (cpu_rate > 1428000 && game_pls)
+	if (cpu_rate > 1428000 && game_pls)
 		return 924000000;
-	else if (cpu_rate > 1428000 && norm_prof)
+	if (cpu_rate > 1428000 && norm_prof)
 		return 792000000;
-	else if (cpu_rate > 1224000 && prf_btch)
+	if (cpu_rate > 1224000 && prf_btch)
 		return 924000000;
-	else if (cpu_rate > 1224000 && bat_btch)
+	if (cpu_rate > 1224000 && bat_btch)
 		return 600000000;
-	else if (cpu_rate > 1044000 && norm_prof)
+	if (cpu_rate > 1044000 && norm_prof)
 		return 600000000;
-	else if (cpu_rate > 1044000 && bat_btch)
+	if (cpu_rate > 1044000 && bat_btch)
 		return 528000000;
-    else if (cpu_rate > 1044000 && state_suspended)
+    if (cpu_rate > 1044000 && state_suspended)
         return 300000000;
-	else if (cpu_rate > 696000 && norm_prof)
+	if (cpu_rate > 696000 && norm_prof)
 		return 396000000;
-	else if (cpu_rate > 696000 && bat_btch)
+	if (cpu_rate > 696000 && bat_btch)
 		return 300000000;
-	else if (cpu_rate > 204000 && !bat_btch)
+	if (cpu_rate > 204000 && !bat_btch)
 		return 300000000;
-	else if (cpu_rate > 204000 && state_suspended)
+	if (cpu_rate > 204000 && (state_suspended || bat_btch))
 		return 0;
-    else if (cpu_rate > 204000 && bat_btch)
-        return 0;
-    else if (emc_rate = 300000000 && norm_prof)
-        		udelay(700);
-	    return 0;
 }
 
 unsigned long tegra_emc_cpu_limit(unsigned long cpu_rate)
