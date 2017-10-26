@@ -295,7 +295,7 @@ void tegra_edp_notify_gpu_load(unsigned int load, unsigned int freq_in_hz)
 	if (gpu_busy)
 		do_cap_control();
 	else
-		schedule_delayed_work(&capping_work,
+		queue_delayed_work(system_power_efficient_wq, &capping_work,
 				msecs_to_jiffies(gpu_window));
 }
 EXPORT_SYMBOL(tegra_edp_notify_gpu_load);

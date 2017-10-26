@@ -42,7 +42,7 @@ static void oc_throttle_alarm(struct sysedp_reactive_capping_platform_data *h)
 
 	sysedp_set_state(&h->sysedpc, count_state(h->cur_capping_mw));
 
-	schedule_delayed_work(&h->work, msecs_to_jiffies(h->relax_ms));
+	queue_delayed_work(system_power_efficient_wq, &h->work, msecs_to_jiffies(h->relax_ms));
 
 	mutex_unlock(&h->mutex);
 }
@@ -60,7 +60,7 @@ static void oc_throttle_work(struct work_struct *work)
 	sysedp_set_state(&h->sysedpc, count_state(h->cur_capping_mw));
 
 	if (h->cur_capping_mw)
-		schedule_delayed_work(&h->work, msecs_to_jiffies(h->relax_ms));
+		queue_delayed_work(system_power_efficient_wq, &h->work, msecs_to_jiffies(h->relax_ms));
 
 	mutex_unlock(&h->mutex);
 }
