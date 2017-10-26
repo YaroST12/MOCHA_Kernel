@@ -9304,11 +9304,6 @@ static bool bat_btch = 0;
 module_param_named(bat_btch, bat_btch, bool, 0664); /* Battery profile */
 static bool norm_prof = 1;
 module_param_named(norm_prof, norm_prof, bool, 0664); /* Normal profile */
-static bool emc_manual = 0;
-module_param_named(emc_manual, emc_manual, bool, 0664); /* EMC clock manual control toggler */
-#define EMC_RQ_RATE	600
-unsigned long emc_rq_rate = EMC_RQ_RATE;
-module_param_named(emc_rq_rate, emc_rq_rate, long, 0664); /* EMC control you want to set in MHz */
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
@@ -9318,9 +9313,6 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 	if (emc_max_rate == 0)
 		emc_max_rate = clk_round_rate(
 			tegra_get_clock_by_name("emc"), ULONG_MAX);
-
-    if (emc_manual)
-        return emc_rq_rate * 1000000;
 
     if (cpu_rate > 1836000)
 		return 600000000;
