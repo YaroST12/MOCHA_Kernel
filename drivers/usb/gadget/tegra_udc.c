@@ -434,7 +434,7 @@ static void dr_controller_run(struct tegra_udc *udc)
 		temp |= USB_CMD_RUN_STOP;
 		if (udc->charging_supported &&
 			(udc->connect_type == CONNECT_TYPE_SDP))
-			schedule_delayed_work(&udc->non_std_charger_work,
+			queue_delayed_work(system_power_efficient_wq, &udc->non_std_charger_work,
 				msecs_to_jiffies(NON_STD_CHARGER_DET_TIME_MS));
 	}
 	else
@@ -1746,7 +1746,7 @@ static int tegra_pullup(struct usb_gadget *gadget, int is_on)
 		 */
 		if (udc->charging_supported &&
 			(udc->connect_type == CONNECT_TYPE_SDP))
-			schedule_delayed_work(&udc->non_std_charger_work,
+			queue_delayed_work(system_power_efficient_wq, &udc->non_std_charger_work,
 				msecs_to_jiffies(NON_STD_CHARGER_DET_TIME_MS));
 	} else
 		udc_writel(udc, (tmp & ~USB_CMD_RUN_STOP), USB_CMD_REG_OFFSET);
