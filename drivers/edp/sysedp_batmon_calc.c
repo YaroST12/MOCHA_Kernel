@@ -249,7 +249,7 @@ static void batmon_update(struct work_struct *work)
 
 	update_interval = pdata->update_interval ?: UPDATE_INTERVAL;
 
-	schedule_delayed_work(to_delayed_work(work),
+	queue_delayed_work(system_power_efficient_wq, to_delayed_work(work),
 			      msecs_to_jiffies(update_interval));
 }
 
@@ -266,7 +266,7 @@ static int batmon_suspend(struct platform_device *pdev, pm_message_t state)
 
 static int batmon_resume(struct platform_device *pdev)
 {
-	schedule_delayed_work(&work, 0);
+	queue_delayed_work(system_power_efficient_wq, &work, 0);
 	return 0;
 }
 
@@ -604,7 +604,7 @@ static ssize_t esr_store(const char *s, size_t count)
 	user_esr_ratio = DIV_ROUND_CLOSEST(100 * 1000 * mohm, lut_esr);
 
 	cancel_delayed_work_sync(&work);
-	schedule_delayed_work(&work, 0);
+	queue_delayed_work(system_power_efficient_wq, &work, 0);
 
 	return count;
 }
@@ -692,7 +692,7 @@ static int batmon_probe(struct platform_device *pdev)
 	init_sysfs();
 
 	INIT_DEFERRABLE_WORK(&work, batmon_update);
-	schedule_delayed_work(&work, 0);
+	queue_delayed_work(system_power_efficient_wq, &work, 0);
 
 	init_debug();
 
