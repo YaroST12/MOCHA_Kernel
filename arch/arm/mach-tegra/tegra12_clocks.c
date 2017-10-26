@@ -9295,51 +9295,39 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
     cpu rate is in kHz, emc rate is in Hz */
 /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
 
-// Profiles 1.8
+// Profiles 2.0
 static bool prf_btch = 0;
 module_param_named(prf_btch, prf_btch, bool, 0664); /* Performance profile */
-static bool game_pls = 0;
-module_param_named(game_pls, game_pls, bool, 0664); /* Gaming profile */
 static bool bat_btch = 0;
 module_param_named(bat_btch, bat_btch, bool, 0664); /* Battery profile */
-static bool norm_prof = 1;
-module_param_named(norm_prof, norm_prof, bool, 0664); /* Normal profile */
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
 	static unsigned long last_emc_rate;
 	unsigned long emc_rate;
-
+	
 	if (emc_max_rate == 0)
 		emc_max_rate = clk_round_rate(
 			tegra_get_clock_by_name("emc"), ULONG_MAX);
 
-    if (cpu_rate > 1836000)
+    if (cpu_rate > 1836000 && !prf_btch)
 		return 600000000;
-	if (cpu_rate > 1632000 && game_pls)
-		return 792000000;
-	if (cpu_rate > 1428000 && game_pls)
+	if (cpu_rate > 1632000)
 		return 924000000;
-	if (cpu_rate > 1428000 && norm_prof)
+	if (cpu_rate > 1428000 && !bat_btch)
 		return 792000000;
-	if (cpu_rate > 1224000 && prf_btch)
-		return 924000000;
-	if (cpu_rate > 1224000 && bat_btch)
+	if (cpu_rate > 1044000)
 		return 600000000;
-	if (cpu_rate > 1044000 && norm_prof)
-		return 600000000;
-	if (cpu_rate > 1044000 && bat_btch)
-		return 528000000;
-    if (cpu_rate > 1044000 && state_suspended)
-        return 300000000;
-	if (cpu_rate > 696000 && norm_prof)
+	if (cpu_rate > 696000)
 		return 396000000;
-	if (cpu_rate > 696000 && bat_btch)
+	if (cpu_rate > 204000)
 		return 300000000;
-	if (cpu_rate > 204000 && !bat_btch)
-		return 300000000;
-	if (cpu_rate > 204000 && (state_suspended || bat_btch))
-		return 0;
+	if (cpu_rate > 204000 && bat_btch)
+		return 204000000;	
+	
+	if (emc_rate < last_emc_rate)
+		udelay(200);
+	last_emc_rate = emc_rate;
 	
 	return emc_rate;
 }
