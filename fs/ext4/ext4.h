@@ -35,6 +35,7 @@
 #include <linux/compat.h>
 #endif
 
+#define HZ_ext4 msecs_to_jiffies(1000)
 /*
  * The fourth extended filesystem constants/structures
  */
