@@ -7435,12 +7435,11 @@ wl_notify_connect_status(struct bcm_cfg80211 *cfg, bcm_struct_cfgdev *cfgdev,
 						WL_ERR(("WLC_DISASSOC error %d\n", err));
 						err = 0;
 					}
+					cfg80211_disconnected(ndev, reason, NULL, 0, GFP_KERNEL);
+					wl_link_down(cfg);
+					wl_init_prof(cfg, ndev);
 				}
-				cfg80211_disconnected(ndev, reason, NULL, 0, GFP_KERNEL);
-				wl_link_down(cfg);
-				wl_init_prof(cfg, ndev);
-			}
-			else if (wl_get_drv_status(cfg, CONNECTING, ndev)) {
+			} else if (wl_get_drv_status(cfg, CONNECTING, ndev)) {
 				printk("link down, during connecting\n");
 #ifdef ESCAN_RESULT_PATCH
 				if ((memcmp(connect_req_bssid, broad_bssid, ETHER_ADDR_LEN) == 0) ||
