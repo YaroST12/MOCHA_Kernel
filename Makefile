@@ -374,6 +374,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
+		   -fno-aggressive-loop-optimizations \
 		   -std=gnu89
 		   
 # Thanks gcc!
@@ -403,7 +404,7 @@ KBUILD_CFLAGS	+= -g0 -DNDEBUG \
 		   -fmodulo-sched-allow-regmoves \
 		   -ftree-loop-distribution \
 		   -ftree-loop-linear \
-		   -O2 -mtune=cortex-a15 -fno-gcse \
+		   -O2 -march=armv7 -fno-gcse \
 		   -pipe -fno-pic
 
 # These flags need a special toolchain so split them off
