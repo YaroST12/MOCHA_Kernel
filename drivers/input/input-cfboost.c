@@ -77,8 +77,8 @@ static unsigned int boost_emc; /* kHz */
 module_param(boost_emc, uint, 0644);
 static unsigned long boost_time = 500; /* ms */
 module_param(boost_time, ulong, 0644);
-static unsigned long boost_cpus;
-module_param(boost_cpus, ulong, 0644);
+static unsigned long boost_cpus = 0;
+module_param(boost_cpus, ulong, 0444);
 static bool gpu_wakeup = 1; /* 1 = enabled */
 module_param(gpu_wakeup, bool, 0644);
 static unsigned int boost_gpu; /* kHz */
