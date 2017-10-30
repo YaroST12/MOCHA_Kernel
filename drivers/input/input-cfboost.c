@@ -54,10 +54,31 @@ MODULE_LICENSE("GPL v2");
 
 static struct pm_qos_request freq_req, core_req, emc_req, gpu_req;
 static struct dev_pm_qos_request gpu_wakeup_req;
+static unsigned int boost_freq; /* kHz */
+static int boost_freq_set(const char *arg, const struct kernel_param *kp)
+{
+	unsigned int old_boost = boost_freq;
+	int ret = param_set_uint(arg, kp);
+	if (ret == 0 && old_boost && !boost_freq)
+		pm_qos_update_request(&freq_req,
+				      PM_QOS_DEFAULT_VALUE);
+	return ret;
+}
+static int boost_freq_get(char *buffer, const struct kernel_param *kp)
+{
+	return param_get_uint(buffer, kp);
+}
+static struct kernel_param_ops boost_freq_ops = {
+	.set = boost_freq_set,
+	.get = boost_freq_get,
+};
+module_param_cb(boost_freq, &boost_freq_ops, &boost_freq, 0644);
 static unsigned int boost_emc; /* kHz */
 module_param(boost_emc, uint, 0644);
 static unsigned long boost_time = 500; /* ms */
 module_param(boost_time, ulong, 0644);
+static unsigned long boost_cpus = 0;
+module_param(boost_cpus, ulong, 0444);
 static bool gpu_wakeup = 1; /* 1 = enabled */
 module_param(gpu_wakeup, bool, 0644);
 static unsigned int boost_gpu; /* kHz */
@@ -96,8 +117,15 @@ void cfb_remove_device(struct device *dev)
 
 static void cfb_boost(struct kthread_work *w)
 {
-	trace_input_cfboost_params("boost_params", boost_emc,
-			boost_gpu, boost_time, 0, 0);
+	trace_input_cfboost_params("boost_params", boost_freq, boost_emc,
+			boost_gpu, boost_cpus, boost_time);
+	if (boost_cpus > 0)
+		pm_qos_update_request_timeout(&core_req, boost_cpus,
+				boost_time * 1000);
+
+	if (boost_freq > 0)
+		pm_qos_update_request_timeout(&freq_req, boost_freq,
+				boost_time * 1000);
 
 	if (boost_emc > 0)
 		pm_qos_update_request_timeout(&emc_req, boost_emc,
