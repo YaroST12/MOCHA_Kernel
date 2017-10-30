@@ -54,7 +54,7 @@ MODULE_LICENSE("GPL v2");
 
 static struct pm_qos_request freq_req, core_req, emc_req, gpu_req;
 static struct dev_pm_qos_request gpu_wakeup_req;
-static unsigned int boost_freq; /* kHz */
+static unsigned int boost_freq = 0; /* kHz */
 static int boost_freq_set(const char *arg, const struct kernel_param *kp)
 {
 	unsigned int old_boost = boost_freq;
@@ -72,7 +72,7 @@ static struct kernel_param_ops boost_freq_ops = {
 	.set = boost_freq_set,
 	.get = boost_freq_get,
 };
-module_param_cb(boost_freq, &boost_freq_ops, &boost_freq, 0644);
+module_param_cb(boost_freq, &boost_freq_ops, &boost_freq, 0444);
 static unsigned int boost_emc; /* kHz */
 module_param(boost_emc, uint, 0644);
 static unsigned long boost_time = 500; /* ms */
