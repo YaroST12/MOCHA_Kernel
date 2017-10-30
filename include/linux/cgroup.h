@@ -904,17 +904,7 @@ static inline int cgroupstats_build(struct cgroupstats *stats,
 }
 
 /* No cgroups - nothing to do */
-static inline int cgroup_attach_task_all(struct task_struct *from,
-					 struct task_struct *t)
-{
-	return 0;
-}
 
-static inline int subsys_cgroup_allow_attach(struct cgroup *cgrp,
-					     struct cgroup_taskset *tset)
-{
-	return 0;
-}
 #endif /* !CONFIG_CGROUPS */
 
 #endif /* _LINUX_CGROUP_H */
