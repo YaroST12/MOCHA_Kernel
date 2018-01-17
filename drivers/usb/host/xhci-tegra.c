@@ -3765,8 +3765,8 @@ tegra_xhci_resume(struct platform_device *pdev)
 	disable_irq_wake(tegra->usb2_irq);
 	tegra->lp0_exit = true;
 
-	regulator_enable(tegra->xusb_s1p05v_reg);
-	regulator_enable(tegra->xusb_s1p8v_reg);
+	//regulator_enable(tegra->xusb_s1p05v_reg);
+	//regulator_enable(tegra->xusb_s1p8v_reg);
 	tegra_usb2_clocks_init(tegra);
 
 	return 0;
@@ -3824,7 +3824,7 @@ static void init_filesystem_firmware_done(const struct firmware *fw,
 	memcpy(fw_data, fw->data, fw_size);
 	dev_info(&pdev->dev,
 		"Firmware DMA Memory: dma 0x%p mapped 0x%p (%d Bytes)\n",
-		(void *) fw_dma, fw_data, fw_size);
+		(void *)(uintptr_t) fw_dma, fw_data, fw_size);
 
 	/* all set and ready to go */
 	tegra->firmware.data = fw_data;
@@ -4359,7 +4359,7 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 	tegra->bdata->portmap = tegra->pdata->portmap;
 	tegra->bdata->hsic[0].pretend_connect =
 				tegra->pdata->pretend_connect_0;
-	if (tegra->bdata->portmap == NULL)
+	if (!tegra->bdata->portmap)
 		return -ENODEV;
 	tegra->bdata->lane_owner = tegra->pdata->lane_owner;
 	tegra->soc_config = soc_config;

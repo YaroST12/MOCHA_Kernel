@@ -46,7 +46,7 @@ static struct vibrator_data *data;
 static void vibrator_start(void)
 {
 	if (!data->vibrator_on) {
-		regulator_enable(data->regulator);
+		//regulator_enable(data->regulator);
 		data->vibrator_on = true;
 	}
 }

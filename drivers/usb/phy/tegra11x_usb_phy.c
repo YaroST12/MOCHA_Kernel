@@ -1112,7 +1112,7 @@ static int utmi_phy_power_on(struct tegra_usb_phy *phy)
 	if (config->xcvr_hsslew_lsb)
 		val |= UTMIP_XCVR_HSSLEW_LSB(config->xcvr_hsslew_lsb);
 	writel(val, base + UTMIP_XCVR_CFG0);
-	pr_info("usb_phy: utmip_xcvr_cfg0_0: 0x%x\n", val);
+	pr_info("usb_phy: utmip_xcvr_cfg0_0: 0lui%x\n", val);
 
 	val = readl(base + UTMIP_XCVR_CFG1);
 	val &= ~(UTMIP_FORCE_PDDISC_POWERDOWN | UTMIP_FORCE_PDCHRP_POWERDOWN |

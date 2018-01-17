@@ -1,7 +1,7 @@
 /*
  *
  * Automatically generated file; DO NOT EDIT.
- * Linux/arm 3.10.107 Kernel Configuration
+ * Linux/arm 3.10.107-Back-from-dead Kernel Configuration
  *
  */
 /*

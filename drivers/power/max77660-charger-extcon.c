@@ -850,18 +850,17 @@ static int max77660_charger_thermal_configure(
 			battery_charging_status_update(chip->bc_dev,
 				BATTERY_CHARGING);
 		} else if (enable_charg_half_current &&
-			chip->charging_state != ENABLED_HALF_IBAT) {
+			chip->charging_state != ENABLED_HALF_IBAT)
 			max77660_half_current_enable(chip);
 			/* MBATREGMAX to 4.05V */
-			ret = max77660_reg_write(chip->parent,
-					MAX77660_CHG_SLAVE,
-					MAX77660_CHARGER_MBATREGMAX,
-					MAX77660_MBATREG_4050MV);
-			if (ret < 0)
-				return ret;
-			battery_charging_status_update(chip->bc_dev,
-							BATTERY_CHARGING);
-		}
+		ret = max77660_reg_write(chip->parent,
+				MAX77660_CHG_SLAVE,
+				MAX77660_CHARGER_MBATREGMAX,
+				MAX77660_MBATREG_4050MV);
+		if (ret < 0)
+			return ret;
+		battery_charging_status_update(chip->bc_dev,
+						BATTERY_CHARGING);
 	} else {
 		if (chip->charging_state != DISABLED) {
 			max77660_charging_disable(chip);

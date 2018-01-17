@@ -126,9 +126,9 @@ static int max8831_bl_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "%s: Unable to get the backlight regulator\n",
 		       __func__);
 		data->regulator = NULL;
-	} else {
+	} /*else {
 		regulator_enable(data->regulator);
-	}
+	}*/
 
 	props.type = BACKLIGHT_RAW;
 	props.max_brightness = 255;
@@ -179,8 +179,8 @@ static int max8831_bl_resume(struct device *dev)
 	struct backlight_device *bl = platform_get_drvdata(pdev);
 	struct max8831_backlight_data *data = bl_get_data(bl);
 
-	if (data->regulator)
-		regulator_enable(data->regulator);
+	/*if (data->regulator)
+		regulator_enable(data->regulator);*/
 	backlight_update_status(bl);
 	return 0;
 }

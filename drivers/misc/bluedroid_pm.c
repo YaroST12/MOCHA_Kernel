@@ -162,10 +162,12 @@ static int bluedroid_pm_rfkill_set_power(void *data, bool blocked)
 			pm_qos_remove_request(&bluedroid_pm->
 						resume_cpu_freq_req);
 	} else {
+		/*
 		if (bluedroid_pm->vdd_3v3)
 			regulator_enable(bluedroid_pm->vdd_3v3);
 		if (bluedroid_pm->vdd_1v8)
 			regulator_enable(bluedroid_pm->vdd_1v8);
+			*/
 		if (bluedroid_pm->gpio_shutdown)
 			gpio_set_value(bluedroid_pm->gpio_shutdown, 1);
 		if (bluedroid_pm->gpio_reset)

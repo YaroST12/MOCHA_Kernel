@@ -897,7 +897,7 @@ static int print_wakeup_source_stats(struct seq_file *m,
 	unsigned long active_count;
 	ktime_t active_time;
 	ktime_t prevent_sleep_time;
-	int ret;
+	int ret = 0;
 
 	spin_lock_irqsave(&ws->lock, flags);
 
