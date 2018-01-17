@@ -1620,10 +1620,10 @@ static void __init tegra_ardbeg_late_init(void)
 	else
 		ardbeg_panel_init();
 
-		/* put PEX pads into DPD mode to save additional power */
-		tegra_io_dpd_enable(&pexbias_io);
-		tegra_io_dpd_enable(&pexclk1_io);
-		tegra_io_dpd_enable(&pexclk2_io);
+	/* put PEX pads into DPD mode to save additional power */
+	tegra_io_dpd_enable(&pexbias_io);
+	tegra_io_dpd_enable(&pexclk1_io);
+	tegra_io_dpd_enable(&pexclk2_io);
 
 	if (board_info.board_id == BOARD_PM374)
 		norrin_kbc_init();

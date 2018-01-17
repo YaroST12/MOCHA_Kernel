@@ -2280,7 +2280,7 @@ static int mxt_set_power_cfg(struct mxt_data *data, u8 mode)
 		for (i = 0; i < cnt; i++) {
 			if (mxt_get_object(data, mxt_save[i].suspend_obj) == NULL)
 				continue;
-			if (mxt_save[i].suspend_flags == MXT_SUSPEND_DYNAMIC)
+			if (mxt_save[i].suspend_flags == MXT_SUSPEND_DYNAMIC) {
 				error |= mxt_read_object(data,
 					mxt_save[i].suspend_obj,
 					mxt_save[i].suspend_reg,
@@ -2289,6 +2289,7 @@ static int mxt_set_power_cfg(struct mxt_data *data, u8 mode)
 					mxt_save[i].suspend_obj,
 					mxt_save[i].suspend_reg,
 					mxt_save[i].suspend_val);
+			}
 			if (error) {
 				error = mxt_chip_reset(data);
 				if (error)
@@ -4117,7 +4118,7 @@ static int mxt_proc_init()
 {
 	int ret = 0;
 	char *buf, *path = NULL;
-	char *double_tap_sysfs_node, *key_disabler_sysfs_node;;
+	char *double_tap_sysfs_node, *key_disabler_sysfs_node;
 	struct proc_dir_entry *proc_entry_tp = NULL;
 	struct proc_dir_entry *proc_symlink_tmp  = NULL;
 
@@ -4789,7 +4790,7 @@ err_irq_gpio_req:
 err_disable_regulator:
 	if (gpio_is_valid(pdata->power_gpio))
 		gpio_set_value_cansleep(pdata->power_gpio, 0);
-	else if (data->regulator_vdd != NULL);
+	else if (data->regulator_vdd != NULL)
 		regulator_disable(data->regulator_vdd);
 err_free_power_gpio:
 	if (gpio_is_valid(pdata->power_gpio))

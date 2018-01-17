@@ -295,8 +295,7 @@ int cfpkt_setlen(struct cfpkt *pkt, u16 len)
 			___pskb_trim(skb, len);
 		else
 			skb_trim(skb, len);
-
-			return cfpkt_getlen(pkt);
+		return cfpkt_getlen(pkt);
 	}
 
 	/* Need to expand SKB */
