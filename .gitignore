@@ -46,6 +46,7 @@ modules.builtin
 /Module.markers
 /Module.symvers
 /arch/arm/kernel/vdso32/
+/arch/arm/kernel/vdso32/vdso32.lds
 
 #
 # Debian directory (make deb-pkg)
