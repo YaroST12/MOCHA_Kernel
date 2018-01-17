@@ -1,7 +1,0 @@
-KERNEL_DIR=$PWD
-export KBUILD_BUILD_HOST="Sup-Mint"
-export KBUILD_BUILD_USER="Yaro330"
-export ARCH=arm
-make f1xy_defconfig
-make -j16 ARCH=arm CROSS_COMPILE=/home/$USER/build/mocha/gcc-prebuilts/bin/arm-linaro-linux-androideabi- zImage
-cp $KERNEL_DIR/arch/arm/boot/zImage $KERNEL_DIR/build/zImage
