@@ -413,7 +413,7 @@ KBUILD_CFLAGS	+= $(call cc-option,-mlow-precision-recip-sqrt,) \
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,array-bounds,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
-
+KBUILD_CFLAGS	+= $(call cc-disable-warning,format,)
 # Kill format truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 
