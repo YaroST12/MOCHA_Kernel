@@ -600,22 +600,22 @@ static int synaptics_rmi4_f11_abs_report(struct synaptics_rmi4_data *rmi4_data,
 {
 	int retval;
 	unsigned char touch_count = 0; /* number of touch points */
-	unsigned char reg_index;
-	unsigned char finger;
-	unsigned char fingers_supported;
-	unsigned char num_of_finger_status_regs;
-	unsigned char finger_shift;
-	unsigned char finger_status;
-	unsigned char data_reg_blk_size;
+	unsigned char reg_index = 0;
+	unsigned char finger = 0;
+	unsigned char fingers_supported = 0;
+	unsigned char num_of_finger_status_regs = 0;
+	unsigned char finger_shift = 0;
+	unsigned char finger_status = 0;
+	unsigned char data_reg_blk_size = 0;
 	unsigned char finger_status_reg[3];
 	unsigned char data[F11_STD_DATA_LEN];
-	unsigned short data_addr;
-	unsigned short data_offset;
-	int x;
-	int y;
-	int wx;
-	int wy;
-	int temp;
+	unsigned short data_addr = 0;
+	unsigned short data_offset = 0;
+	int x = 0;
+	int y = 0;
+	int wx = 0;
+	int wy = 0;
+	int temp = 0;
 
 	/*
 	 * The number of finger status registers is determined by the
@@ -628,6 +628,7 @@ static int synaptics_rmi4_f11_abs_report(struct synaptics_rmi4_data *rmi4_data,
 	data_addr = fhandler->full_addr.data_base;
 	data_reg_blk_size = fhandler->size_of_data_register_block;
 
+	mutex_lock(&(rmi4_data->rmi4_reset_mutex));
 	retval = synaptics_rmi4_reg_read(rmi4_data,
 			data_addr,
 			finger_status_reg,
@@ -716,7 +717,7 @@ static int synaptics_rmi4_f11_abs_report(struct synaptics_rmi4_data *rmi4_data,
 			touch_count++;
 		}
 	}
-
+	mutex_unlock(&(rmi4_data->rmi4_reset_mutex));
 	if (touch_count == 0) {
 		input_report_key(rmi4_data->input_dev,
 				BTN_TOUCH, 0);
