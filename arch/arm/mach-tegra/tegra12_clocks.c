@@ -9295,11 +9295,6 @@ struct tegra_cpufreq_table_data *tegra_cpufreq_table_get(void)
     cpu rate is in kHz, emc rate is in Hz */
 /* EMC clocks: 204000000 300000000 396000000 528000000 600000000 792000000 924000000*/
 
-// Profiles 2.0
-static bool prf_btch = 0;
-module_param_named(prf_btch, prf_btch, bool, 0664); /* Performance profile */
-static bool bat_btch = 0;
-module_param_named(bat_btch, bat_btch, bool, 0664); /* Battery profile */
 unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 {
 	static unsigned long emc_max_rate;
@@ -9310,24 +9305,16 @@ unsigned long tegra_emc_to_cpu_ratio(unsigned long cpu_rate)
 		emc_max_rate = clk_round_rate(
 			tegra_get_clock_by_name("emc"), ULONG_MAX);
 
-    if (cpu_rate > 1836000 && !prf_btch)
-		return 600000000;
-	if (cpu_rate > 1632000)
-		return 924000000;
-	if (cpu_rate > 1428000 && !bat_btch)
-		return 792000000;
-	if (cpu_rate > 1044000)
-		return 600000000;
-	if (cpu_rate > 696000)
-		return 396000000;
-	if (cpu_rate > 204000)
-		return 300000000;
-	if (cpu_rate > 204000 && bat_btch)
-		return 204000000;	
-	
-	if (emc_rate < last_emc_rate)
-		udelay(200);
-	last_emc_rate = emc_rate;
+    if (cpu_rate > 1700000)
+		emc_rate = 792000000;
+	else if (cpu_rate > 1530000)
+		emc_rate = emc_max_rate;
+	else if (cpu_rate > 1044000)
+		emc_rate = 600000000;
+	else if (cpu_rate > 696000)
+		emc_rate = 396000000;
+	else if (cpu_rate > 200000)
+		emc_rate = 300000000;
 	
 	return emc_rate;
 }
