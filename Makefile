@@ -394,35 +394,34 @@ LDFLAGS		+= --strip-debug -O2
 
 # Optimization flags
 KBUILD_CFLAGS	+= -g0 -DNDEBUG \
-		   -fgraphite \
-		   -fgraphite-identity \
-		   -fivopts \
-		   -floop-block \
-		   -floop-interchange \
-		   -floop-strip-mine \
-		   -fmodulo-sched \
-		   -fmodulo-sched-allow-regmoves \
-		   -ftree-loop-distribution \
-		   -ftree-loop-linear \
-		   -O2 -march=armv7 -fno-gcse \
-		   -pipe -fno-pic
+		-fivopts \
+		-floop-block \
+		-floop-interchange
+
+# F1xy optimizations
+KBUILD_CFLAGS	+= -O2 -march=armv7 -fno-gcse \
+		-pipe \
+		-fno-pic \
+		-fno-signed-zeros \
+		-fpredictive-commoning
 
 # These flags need a special toolchain so split them off
 KBUILD_CFLAGS	+= $(call cc-option,-mlow-precision-recip-sqrt,) \
 		   $(call cc-option,-mpc-relative-literal-loads,)
 
-# Disable all maybe-uninitialized warnings
+# Disable maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
-
-# Disable unused-constant-variable warnings
+KBUILD_CFLAGS	+= $(call cc-disable-warning,array-bounds,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
 
-# Disable format-truncation warnings
+# Kill format truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 
-# Needed to unbreak GCC 7.x and above
-KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
+# Why do you guys exist?
+KBUILD_CFLAGS   += $(call cc-disable-warning,duplicate-decl-specifier,)
+KBUILD_CFLAGS   += $(call cc-disable-warning,unused-variable,)
 
+# Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 
 KBUILD_AFLAGS_KERNEL :=
