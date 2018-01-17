@@ -2,8 +2,7 @@
  * Linux-specific abstractions to gain some independence from linux kernel versions.
  * Pave over some 2.2 versus 2.4 versus 2.6 kernel differences.
  *
- * Copyright (C) 1999-2014, Broadcom Corporation
- * Copyright (C) 2016 XiaoMi, Inc.
+ * Copyright (C) 1999-2013, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -23,7 +22,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: linuxver.h 431983 2013-10-25 06:53:27Z $
+ * $Id: linuxver.h 417757 2013-08-12 12:24:45Z $
  */
 
 #ifndef _linuxver_h_
@@ -41,10 +40,6 @@
 #endif
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)) */
 #include <linux/module.h>
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0))
-#include <linux/kconfig.h>
-#endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0))
 /* __NO_VERSION__ must be defined for all linkables except one in 2.2 */
@@ -105,10 +100,7 @@
 #endif	/* LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 41) */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
-#define DAEMONIZE(a)	do { \
-		allow_signal(SIGKILL);	\
-		allow_signal(SIGTERM);	\
-	} while (0)
+#define DAEMONIZE(a)
 #elif ((LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)) && \
 	(LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)))
 #define DAEMONIZE(a) daemonize(a); \
@@ -188,13 +180,8 @@ typedef irqreturn_t(*FN_ISR) (int irq, void *dev_id, struct pt_regs *ptregs);
 #define __devexit
 #endif
 #ifndef __devinit
-#  if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0))
-#    define __devinit	__init
-#  else
-/* All devices are hotpluggable since linux 3.8.0 */
-#    define __devinit
-#  endif
-#endif /* !__devinit */
+#define __devinit	__init
+#endif
 #ifndef __devinitdata
 #define __devinitdata
 #endif
@@ -564,20 +551,20 @@ static inline bool binary_sema_down(tsk_ctl_t *tsk)
 			DBG_THR(("dhd_dpc_thread: Unexpected up_cnt %d\n", tsk->up_cnt));
 		}
 		spin_unlock_irqrestore(&tsk->spinlock, flags);
-		return false;
+		return FALSE;
 	} else
-		return true;
+		return TRUE;
 }
 
 static inline bool binary_sema_up(tsk_ctl_t *tsk)
 {
-	bool sem_up = false;
+	bool sem_up = FALSE;
 	unsigned long flags = 0;
 
 	spin_lock_irqsave(&tsk->spinlock, flags);
 	if (tsk->up_cnt == 0) {
 		tsk->up_cnt++;
-		sem_up = true;
+		sem_up = TRUE;
 	} else if (tsk->up_cnt == 1) {
 		/* dhd_sched_dpc: dpc is alread up! */
 	} else
@@ -711,14 +698,6 @@ not match our unaligned address for < 2.6.24
 #define netdev_priv(dev) dev->priv
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)) */
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25))
-#define CAN_SLEEP()	((!in_atomic() && !irqs_disabled()))
-#else
-#define CAN_SLEEP()	(FALSE)
-#endif
-
-#define KMALLOC_FLAG (CAN_SLEEP() ? GFP_KERNEL : GFP_ATOMIC)
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
 #define RANDOM32	prandom_u32
 #else
@@ -730,20 +709,5 @@ not match our unaligned address for < 2.6.24
 #else
 #define SRANDOM32(entropy)	srandom32(entropy)
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0) */
-
-/*
- * Overide latest kfifo functions with
- * older version to work on older kernels
- */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33))
-#define kfifo_in_spinlocked(a, b, c, d)		kfifo_put(a, (u8 *)b, c)
-#define kfifo_out_spinlocked(a, b, c, d)	kfifo_get(a, (u8 *)b, c)
-#define kfifo_esize(a)				1
-#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 32)) && \
-	(LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)) &&	!defined(WL_COMPAT_WIRELESS)
-#define kfifo_in_spinlocked(a, b, c, d)		kfifo_in_locked(a, b, c, d)
-#define kfifo_out_spinlocked(a, b, c, d)	kfifo_out_locked(a, b, c, d)
-#define kfifo_esize(a)				1
-#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)) */
 
 #endif /* _linuxver_h_ */
