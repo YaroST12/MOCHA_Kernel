@@ -716,7 +716,7 @@ thermal_of_build_thermal_zone(struct device_node *np)
 		ret = thermal_of_populate_bind_params(gchild, &tz->tbps[i++],
 						      tz->trips, tz->ntrips);
 		if (ret)
-				goto free_tbps;
+			goto free_tbps;
 	}
 finish:
 	of_node_put(child);

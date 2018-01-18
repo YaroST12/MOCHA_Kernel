@@ -682,8 +682,8 @@ static int ad5816_param_wr(struct ad5816_info *info, unsigned long arg)
 					if (info->s_mode != NVC_SYNC_STEREO) {
 						ad5816_pm_wr(info->s_info,
 						NVC_PWR_OFF);
+						err = -EIO;
 					}
-					err = -EIO;
 				}
 			} else {
 				err = -EINVAL;
