@@ -14,7 +14,7 @@ config IOSCHED_NOOP
 
 config IOSCHED_DEADLINE
 	tristate "Deadline I/O scheduler"
-	default y
+	default n
 	---help---
 	  The deadline I/O scheduler is simple and compact. It will provide
 	  CSCAN service with FIFO expiration of requests, switching to
@@ -44,28 +44,28 @@ config IOSCHED_SIO
 
 config IOSCHED_ZEN
 	tristate "Zen I/O scheduler"
-	default y
+	default n
 	---help---
 	FCFS, dispatches are back-inserted, deadlines ensure fairness.
         Should work best with devices where there is no travel delay.
 
 config IOSCHED_FIFO
 	tristate "Fifo I/O scheduler"
-	default y
+	default n
 	---help---
 	Fifo is similar to no-op I/O scheduler and it's a minimal scheduler that does 		basic   merging and sorting. Ported from: 
 	https://github.com/AndroidDeveloperAlliance/ZenKernel_TUNA/blob/master/block/fifo-iosched.c
 
 config IOSCHED_VR
 	tristate "V(R) I/O scheduler"
-	default y
+	default n
 	---help---
 	Requests are chosen according to SSTF with a penalty of rev_penalty
 	for switching head direction.
 
 config IOSCHED_SIOPLUS
 	tristate "Simple I/O scheduler plus"
-	default y
+	default n
 	---help---
 	Based on the original SIO scheduler with improvements. Functionality for specifying
 	the starvation of async reads against sync reads; starved write requests counter
@@ -84,7 +84,7 @@ config IOSCHED_CFQ
 
 config IOSCHED_ZEN
 	tristate "Zen I/O scheduler"
-	default y
+	default n
 	---help---
 	FCFS, dispatches are back-inserted, deadlines ensure fairness.
         Should work best with devices where there is no travel delay.
@@ -95,11 +95,11 @@ config IOSCHED_MAPLE
 
 config IOSCHED_TRIPNDROID
 	tristate "Tripndroid I/O scheduler"
-	default y
+	default n
 
 config IOSCHED_FIOPS
 	tristate "IOPS based I/O scheduler"
-	default y
+	default n
 	---help---
 	  This is an IOPS based I/O scheduler. It will try to distribute
           IOPS equally among all processes in the system. It's mainly for
@@ -107,7 +107,7 @@ config IOSCHED_FIOPS
 
 config IOSCHED_SIO
 	tristate "Simple I/O scheduler"
-	default y
+	default n
 	---help---
 	  The Simple I/O scheduler is an extremely simple scheduler,
 	  based on noop and deadline, that relies on deadlines to
