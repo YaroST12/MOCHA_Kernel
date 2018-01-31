@@ -62,10 +62,8 @@ int rt5671_update_eqmode(
 
 	dev_dbg(codec->dev, "%s(): mode=%d\n", __func__, mode);
 
-	for (i = 0; i <= EQ_REG_NUM; i++)
-		hweq_param[mode].reg[i] = eqreg[channel][i];
-
 	for (i = 0; i <= EQ_REG_NUM; i++) {
+		hweq_param[mode].reg[i] = eqreg[channel][i];
 		if (hweq_param[mode].reg[i])
 			ioctl_ops->index_write(codec, hweq_param[mode].reg[i],
 					hweq_param[mode].value[i]);

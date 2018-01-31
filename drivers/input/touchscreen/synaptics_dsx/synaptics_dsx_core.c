@@ -552,7 +552,7 @@ static ssize_t synaptics_rmi4_suspend_store(struct device *dev,
 	return count;
 }
 
-static int synaptics_rmi4_proc_init()
+static int synaptics_rmi4_proc_init(void)
 {
 	int ret = 0;
 	char *buf, *path = NULL;
@@ -2531,7 +2531,7 @@ static int synaptics_rmi4_reset_device(struct synaptics_rmi4_data *rmi4_data)
 
 	return 0;
 }
-
+#if 0
 /**
 * synaptics_rmi4_exp_fn_work()
 *
@@ -2569,7 +2569,7 @@ static void synaptics_rmi4_exp_fn_work(struct work_struct *work)
 
 	return;
 }
-
+#endif
 /**
 * synaptics_rmi4_new_function()
 *
@@ -2639,7 +2639,7 @@ static int synaptics_rmi4_input_disable(struct input_dev *in_dev);
 #define RMI4_INPUT_EVENT_WAKUP_MODE_OFF          4
 #define RMI4_INPUT_EVENT_WAKUP_MODE_ON           5
 #define RMI4_INPUT_EVENT_END             5
-
+#if 0
 static void synaptics_rmi4_switch_mode_work(struct work_struct *work)
 {
 	struct synaptics_rmi4_mode_switch *ms = container_of(work,
@@ -2689,7 +2689,7 @@ static int synaptics_rmi4_event(struct input_dev *dev,
 
 	return 0;
 }
-
+#endif
  /**
  * synaptics_rmi4_probe()
  *
@@ -3249,7 +3249,7 @@ static int synaptics_rmi4_resume(struct device *dev)
 		return 0;
 
 	if (rmi4_data->regulator) {
-		regulator_enable(rmi4_data->regulator);
+		//regulator_enable(rmi4_data->regulator);
 		msleep(bdata->power_delay_ms);
 		rmi4_data->current_page = MASK_8BIT;
 	}
