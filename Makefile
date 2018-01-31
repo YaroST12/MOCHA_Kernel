@@ -373,17 +373,12 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-		   -fno-aggressive-loop-optimizations \
 		   -std=gnu89
 		   
 # Thanks gcc!
 KBUILD_CFLAGS   += -Wno-unused-label -Wno-array-bounds -Wno-memset-transposed-args \
-		   -Wno-unused-function -Wno-declaration-after-statement \
-		   -Wno-unused-variable -Wno-parentheses -Wno-maybe-uninitialized \
-		   -Wno-bool-compare -Wno-int-conversion -Wno-format-truncation \
-		   -Wno-discarded-qualifiers -Wno-tautological-compare -Wno-incompatible-pointer-types \
-		   -Wno-int-in-bool-context -Wno-format-overflow
+		   -Wno-unused-variable -Wno-int-conversion -Wno-format-truncation -Wno-parentheses \
+		   -Wno-discarded-qualifiers -Wno-tautological-compare -Wno-incompatible-pointer-types
 
 ###########################
 # FLASH OPTMIZATION SETUP #
@@ -399,7 +394,7 @@ KBUILD_CFLAGS	+= -g0 -DNDEBUG \
 		-floop-interchange
 
 # F1xy optimizations
-KBUILD_CFLAGS	+= -O2 -march=armv7 -fno-gcse \
+KBUILD_CFLAGS	+= -O2 -march=armv7-a -fno-gcse \
 		-pipe \
 		-fno-pic \
 		-fno-signed-zeros \
