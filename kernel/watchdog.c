@@ -106,7 +106,7 @@ __setup("nosoftlockup", nosoftlockup_setup);
 
 int watchdog_get_lockup_state(void)
 {
-	return ((soft_lockup_detected << 8) || hard_lockup_detected);
+	return ((soft_lockup_detected < 8) || hard_lockup_detected);
 }
 
 /*

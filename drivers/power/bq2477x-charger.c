@@ -107,13 +107,13 @@ static int bq2477x_read(struct bq2477x_chip *bq2477x,
 {
 	return regmap_read(bq2477x->regmap, reg, val);
 }
-
+#if 0
 static int bq2477x_read_word(struct bq2477x_chip *bq2477x,
 	unsigned int reg, unsigned int *val)
 {
 	return regmap_read(bq2477x->regmap_word, reg, val);
 }
-
+#endif
 static int bq2477x_write(struct bq2477x_chip *bq2477x,
 	unsigned int reg, unsigned int val)
 {

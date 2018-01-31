@@ -19,12 +19,12 @@ static unsigned long arch_timer_read_counter_long(void)
 {
 	return arch_timer_read_counter();
 }
-
+#if 0
 static u32 notrace arch_timer_read_counter_u32(void)
 {
 	return arch_timer_read_counter();
 }
-
+#endif
 static struct delay_timer arch_delay_timer;
 
 static void __init arch_timer_delay_timer_register(void)

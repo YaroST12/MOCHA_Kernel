@@ -4114,7 +4114,7 @@ static const struct attribute_group mxt_attr_group = {
 	.attrs = mxt_attrs,
 };
 
-static int mxt_proc_init()
+static int mxt_proc_init(void)
 {
 	int ret = 0;
 	char *buf, *path = NULL;

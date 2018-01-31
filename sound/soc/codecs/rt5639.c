@@ -1875,7 +1875,7 @@ static int rt5639_hp_event(struct snd_soc_dapm_widget *w,
 
 	return 0;
 }
-
+#if 0
 static int rt5639_mono_event(struct snd_soc_dapm_widget *w,
 	struct snd_kcontrol *kcontrol, int event)
 {
@@ -1898,7 +1898,7 @@ static int rt5639_mono_event(struct snd_soc_dapm_widget *w,
 
 	return 0;
 }
-
+#endif
 static int rt5639_lout_event(struct snd_soc_dapm_widget *w,
 	struct snd_kcontrol *kcontrol, int event)
 {
