@@ -3,7 +3,7 @@
 # SDIO Basic feature
 #####################
 
-DHDCFLAGS += -Wall -Wstrict-prototypes -Dlinux -DLINUX -DBCMDRIVER            \
+DHDCFLAGS += -Os -Wall -Wstrict-prototypes -Dlinux -DLINUX -DBCMDRIVER            \
 	-DBCMDONGLEHOST -DUNRELEASEDCHIP -DBCMDMA32 -DBCMFILEIMAGE            \
 	-DDHDTHREAD -DSHOW_EVENTS -DBCMDBG -DWLP2P                            \
 	-DWIFI_ACT_FRAME -DARP_OFFLOAD_SUPPORT                                \
@@ -29,8 +29,8 @@ DHDCFLAGS += -DWL_SCB_TIMEOUT=10
 
 # TDLS enable
 DHDCFLAGS += -DWLTDLS -DWLTDLS_AUTO_ENABLE
-# For TDLS tear down inactive time 40 sec
-DHDCFLAGS += -DCUSTOM_TDLS_IDLE_MODE_SETTING=40000
+# For TDLS tear down inactive time 5 sec
+DHDCFLAGS += -DCUSTOM_TDLS_IDLE_MODE_SETTING=5000
 # for TDLS RSSI HIGH for establishing TDLS link
 DHDCFLAGS += -DCUSTOM_TDLS_RSSI_THRESHOLD_HIGH=-60
 # for TDLS RSSI HIGH for tearing down TDLS link
@@ -46,12 +46,9 @@ DHDCFLAGS += -DCUSTOM_ROAM_DELTA_SETTING=10
 # Set PM 2 always regardless suspend/resume
 DHDCFLAGS += -DSUPPORT_PM2_ONLY
 
-# For special PNO Event keep wake lock for 10sec
-DHDCFLAGS += -DCUSTOM_PNO_EVENT_LOCK_xTIME=10
+# For special PNO Event keep wake lock for 3sec
+DHDCFLAGS += -DCUSTOM_PNO_EVENT_LOCK_xTIME=3
 DHDCFLAGS += -DMIRACAST_AMPDU_SIZE=8
-
-# Early suspend
-DHDCFLAGS += -DDHD_USE_EARLYSUSPEND
 
 # For Scan result patch
 DHDCFLAGS += -DESCAN_RESULT_PATCH
